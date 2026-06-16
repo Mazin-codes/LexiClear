@@ -1,0 +1,10 @@
+langchain
+langchain-community
+langchain-chroma
+chromadb
+sentence-transformers
+torch
+transformers
+pypdf
+python-dotenv
+groq
