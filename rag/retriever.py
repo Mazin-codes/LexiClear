@@ -1,7 +1,4 @@
-def get_retriever(db):
-
-    retriever = db.as_retriever(
+def get_retriever(vector_db):
+    return vector_db.as_retriever(
         search_kwargs={"k": 5}
     )
-
-    return retriever

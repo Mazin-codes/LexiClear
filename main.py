@@ -4,29 +4,22 @@ from rag.embeddings import get_embedding_model
 from rag.vectordb import create_vector_db
 from rag.retriever import get_retriever
 from rag.llm import generate_answer
+from rag.explainability import explain_retrieval
 
 print("\nLoading PDF...")
 
 documents = load_pdf("sample.pdf")
-
 print(f"Pages Loaded: {len(documents)}")
 
 print("\nChunking Document...")
-
 chunks = split_documents(documents)
-
 print(f"Chunks Created: {len(chunks)}")
 
 print("\nCreating Embeddings...")
-
 embeddings = get_embedding_model()
 
 print("\nCreating Vector Database...")
-
-db = create_vector_db(
-    chunks,
-    embeddings
-)
+db = create_vector_db(chunks, embeddings)
 
 retriever = get_retriever(db)
 
@@ -39,17 +32,32 @@ while True:
     if question.lower() == "exit":
         break
 
+    # Retrieve relevant documents
     results = retriever.invoke(question)
 
-    context = "\n\n".join(
-        [doc.page_content for doc in results]
-    )
+    # Generate answer using retrieved documents
+    answer = generate_answer(question, results)
 
-    answer = generate_answer(
-        context,
-        question
-    )
-
-    print("\n" + "="*60)
+    # Display answer
+    print("\n" + "=" * 60)
     print(answer)
-    print("="*60)
+
+    # Explainability
+    print("\nExplainability")
+    print("-" * 30)
+
+    explanations = explain_retrieval(results)
+
+    print("\nExplainability")
+
+    print("=" * 60)
+
+    for item in explanations:
+
+        print(f"Page      : {item['page']}")
+
+        print(f"Chunk ID  : {item['chunk']}")
+
+        print(f"Preview   : {item['preview']}...")
+
+        print("-" * 60)
