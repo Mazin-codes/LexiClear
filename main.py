@@ -5,6 +5,7 @@ from rag.vectordb import create_vector_db
 from rag.retriever import get_retriever
 from rag.llm import generate_answer
 from rag.explainability import explain_retrieval
+from rag.risk_analyzer import analyze_risks
 
 print("\nLoading PDF...")
 
@@ -41,6 +42,14 @@ while True:
     # Display answer
     print("\n" + "=" * 60)
     print(answer)
+
+    print("\n" + "="*60)
+    print("AI Legal Risk Assessment")
+    print("="*60)
+
+    risk_report = analyze_risks(results)
+
+    print(risk_report)
 
     # Explainability
     print("\nExplainability")
