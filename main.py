@@ -6,6 +6,8 @@ from rag.retriever import get_retriever
 from rag.llm import generate_answer
 from rag.explainability import explain_retrieval
 from rag.risk_analyzer import analyze_risks
+from rag.complexity import analyze_document_complexity
+from rag.clause_classifier import classify_clauses
 
 print("\nLoading PDF...")
 
@@ -42,6 +44,60 @@ while True:
     # Display answer
     print("\n" + "=" * 60)
     print(answer)
+
+    complexity = analyze_document_complexity(documents)
+
+    print("\n" + "="*60)
+    print("Document Complexity Report")
+    print("="*60)
+
+    print(
+        f"Complexity Score : "
+        f"{complexity['score']}/100"
+    )
+
+    print(
+        f"Level            : "
+        f"{complexity['level']}"
+    )
+
+    print(
+        f"Words            : "
+        f"{complexity['words']}"
+    )
+
+    print(
+        f"Reading Time     : "
+        f"{complexity['reading_time']} min"
+    )
+
+    print(
+        f"Avg Sentence Len : "
+        f"{complexity['avg_sentence_length']}"
+    )
+
+    print(
+        f"Legal Terms      : "
+        f"{complexity['legal_terms']}"
+    )
+
+    clauses = classify_clauses(documents)
+
+    print("\n" + "="*60)
+    print("Clause Classification Report")
+    print("="*60)
+
+    for category, items in clauses.items():
+
+        if not items:
+            continue
+
+        print(f"\n{category}")
+        print("-"*30)
+
+        for clause in items[:5]:
+
+            print(f"• {clause[:150]}")
 
     print("\n" + "="*60)
     print("AI Legal Risk Assessment")
