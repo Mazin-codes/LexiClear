@@ -1,0 +1,43 @@
+{
+  "Indian_Contract_Act_1872.pdf": {
+    "domain": "contract_law",
+    "title": "Indian Contract Act, 1872",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  },
+
+  "Arbitration_and_Conciliation_Act.pdf": {
+    "domain": "general",
+    "title": "Arbitration and Conciliation Act, 1996",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  },
+
+  "labour_guidelines.pdf": {
+    "domain": "labour_law",
+    "title": "Labour Guidelines",
+    "document_type": "guideline",
+    "jurisdiction": "India"
+  },
+
+  "Shops_and_Establishments_Act.pdf": {
+    "domain": "labour_law",
+    "title": "Karnataka Shops and Commercial Establishments Act",
+    "document_type": "statute",
+    "jurisdiction": "Karnataka"
+  },
+
+  "dpdp_act.pdf": {
+    "domain": "privacy",
+    "title": "Digital Personal Data Protection Act, 2023",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  },
+
+  "info_act.pdf": {
+    "domain": "privacy",
+    "title": "Information Technology Act, 2000",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  }
+}

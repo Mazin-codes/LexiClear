@@ -1,67 +1,79 @@
-from groq import Groq
 from dotenv import load_dotenv
-import os
+from rag.providers.llm_factory import generate
 
 load_dotenv()
 
 
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
+def generate_answer(question, context):
 
-def generate_answer(question, docs):
-
-    context = "\n\n".join(
-        [doc.page_content for doc in docs]
-    )
+    document_context = context["document_context"]
+    legal_context = context["legal_context"]
 
     prompt = f"""
-You are LexiClear+, an AI assistant that simplifies legal and technical documents.
+You are LexiClear+, an AI legal assistant specialized in simplifying legal documents.
 
-IMPORTANT RULES:
-- Answer ONLY from the retrieved context.
-- If the answer is not available in the context, reply:
-  "The information is not available in the uploaded document."
-- Do not make up information.
-- Keep explanations simple and easy to understand.
+You have TWO knowledge sources.
 
-Retrieved Context:
-{context}
+========================================================
+UPLOADED DOCUMENT
+========================================================
 
-Question:
+{document_context}
+
+========================================================
+LEGAL REFERENCE CORPUS
+========================================================
+
+{legal_context}
+
+========================================================
+QUESTION
+========================================================
+
 {question}
 
-Return your answer in exactly this format:
+Instructions:
 
-## Simple Explanation
-(Explain in simple English)
+1. Answer using the uploaded document FIRST.
+2. Use the legal corpus only to explain, validate, or provide legal context.
+3. Never contradict the uploaded document.
+4. If the uploaded document conflicts with general legal guidance,
+   clearly mention the difference.
+5. If the document does not contain the requested information,
+   explicitly say so.
+6. Do not invent clauses.
+7. Explain everything in simple English.
 
-## Important Clauses
-- Point 1
-- Point 2
-- Point 3
+Return your answer in exactly this format.
 
-## Risks
-- Mention possible risks.
-- If no risks are found, write "No significant risks identified."
+## Direct Answer
 
-## Key Terms
-- Mention important legal or technical terms from the retrieved context.
+(Answer the user's question.)
+
+---
+
+## What the Document Says
+
+(Quote or summarize the relevant clause.)
+
+---
+
+## Legal Perspective
+
+(Explain the applicable law or legal guidance from the legal corpus.
+If none is available, write "No relevant legal reference found.")
+
+---
+
+## Practical Meaning
+
+(Explain what this means for a normal person.)
+
+---
+
+## Recommendation
+
+(Explain what the user should keep in mind before acting.)
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert Legal AI Assistant."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.2
-    )
-
-    return response.choices[0].message.content
+    return generate(prompt)

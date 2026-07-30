@@ -1,6 +1,7 @@
 from groq import Groq
 from dotenv import load_dotenv
 import os
+from rag.providers.llm_factory import generate
 
 load_dotenv()
 
@@ -65,19 +66,4 @@ No significant legal risks detected.
 Return the answer neatly using markdown headings.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert Legal Risk Assessment AI."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.1
-    )
-
-    return response.choices[0].message.content
+    return generate(prompt)

@@ -8,11 +8,21 @@ from rag.explainability import explain_retrieval
 from rag.risk_analyzer import analyze_risks
 from rag.complexity import analyze_document_complexity
 from rag.clause_classifier import classify_clauses
+from rag.summary_generator import generate_document_summary
 
 print("\nLoading PDF...")
 
 documents = load_pdf("sample.pdf")
 print(f"Pages Loaded: {len(documents)}")
+
+print("\nGenerating Executive Summary...")
+summary = generate_document_summary(documents)
+
+print("\n" + "=" * 60)
+print("LexiClear+ Executive Summary")
+print("=" * 60)
+
+print(summary)
 
 print("\nChunking Document...")
 chunks = split_documents(documents)
