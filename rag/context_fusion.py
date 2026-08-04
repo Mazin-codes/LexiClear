@@ -13,12 +13,18 @@ def _format_documents(documents):
 
         source = doc.metadata.get("title") or doc.metadata.get("source") or "Uploaded Document"
         page = doc.metadata.get("page", "Unknown")
+        section = doc.metadata.get("section")
+
+        citation = f"{source}, page {page}"
+        if section:
+            citation = f"{source}, {section}, page {page}"
 
         formatted.append(
             f"""
 Document {i}
 Source: {source}
 Page: {page}
+Citation: {citation}
 
 {doc.page_content}
 """

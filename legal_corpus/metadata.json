@@ -6,9 +6,23 @@
     "jurisdiction": "India"
   },
 
+  "Transfer_of_Property_Act.pdf": {
+    "domain": "property",
+    "title": "Transfer of Property Act, 1882",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  },
+
   "Arbitration_and_Conciliation_Act.pdf": {
     "domain": "general",
     "title": "Arbitration and Conciliation Act, 1996",
+    "document_type": "statute",
+    "jurisdiction": "India"
+  },
+
+  "Consumer_Protection_Act_2019.pdf": {
+    "domain": "consumer_law",
+    "title": "Consumer Protection Act, 2019",
     "document_type": "statute",
     "jurisdiction": "India"
   },

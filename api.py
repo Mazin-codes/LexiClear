@@ -12,6 +12,7 @@ from rag.embeddings import get_embedding_model
 from rag.document_classifier import classify_document
 from rag.session import set_document_type
 from pydantic import BaseModel
+from rag.context_fusion import build_context
 
 app = FastAPI(
     title="LexiClear+ API"
@@ -79,30 +80,14 @@ class QuestionRequest(BaseModel):
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
 
-    embeddings = get_embedding_model()
-
-    vector_db = load_vector_db(
-        embeddings=embeddings,
-        persist_directory="./chroma_docs"
-    )
-
-    retriever = get_retriever(vector_db)
-
+    # Build combined context from:
+    # 1. Uploaded document
+    # 2. Legal corpus
     context = build_context(request.question)
 
     answer = generate_answer(
         request.question,
         context
-    )
-
-    # DEBUG
-    for i, doc in enumerate(docs):
-        print(f"\n===== CHUNK {i} =====")
-        print(doc.page_content[:500])
-
-    answer = generate_answer(
-        request.question,
-        docs
     )
 
     return {

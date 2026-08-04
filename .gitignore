@@ -25,3 +25,6 @@ chroma_db/
 
 # Logs
 *.log
+
+# Local runtime state
+document_session.json

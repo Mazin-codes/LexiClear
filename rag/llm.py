@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from rag.citations import format_legal_sources
 from rag.providers.llm_factory import generate
 
 load_dotenv()
@@ -76,4 +77,5 @@ If none is available, write "No relevant legal reference found.")
 (Explain what the user should keep in mind before acting.)
 """
 
-    return generate(prompt)
+    answer = generate(prompt)
+    return answer + format_legal_sources(context.get("legal_chunks", []))

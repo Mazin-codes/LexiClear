@@ -1,19 +1,29 @@
 LEGAL_ROUTE = {
+
     "employment_contract": [
-        "employment",
+        "labour_law",
         "contract_law"
     ],
+
     "rental_agreement": [
-        "rental",
+        "property",
         "contract_law"
     ],
+
     "consumer_notice": [
-        "consumer"
+        "consumer_law",
+        "contract_law"
     ],
+
     "nda": [
         "privacy",
         "contract_law"
     ],
+
+    "service_agreement": [
+        "contract_law"
+    ],
+
     "other": [
         "general"
     ]

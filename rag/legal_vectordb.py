@@ -4,7 +4,7 @@ from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader
 
-from rag.chunker import split_documents
+from rag.chunker import extract_section, split_documents
 from rag.embeddings import get_embedding_model
 from rag.vector_store import create_vector_db
 
@@ -30,10 +30,18 @@ def load_legal_documents():
 
         filename = pdf_path.name
         file_metadata = metadata_map.get(filename, {})
+        current_section = None
 
         for doc in docs:
             doc.metadata.update(file_metadata)
             doc.metadata["file_name"] = filename
+
+            section = extract_section(doc.page_content)
+            if section:
+                current_section = section
+
+            if current_section:
+                doc.metadata["section"] = current_section
 
         documents.extend(docs)
 
