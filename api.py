@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI, UploadFile
 from rag.loader import load_pdf
+from rag.ocr_loader import load_any_document, IMAGE_EXTENSIONS
 from rag.summary_generator import generate_document_summary
 from rag.retriever import get_retriever
 from rag.complexity import analyze_document_complexity
@@ -18,6 +20,8 @@ app = FastAPI(
     title="LexiClear+ API"
 )
 
+ALLOWED_EXTENSIONS = {".pdf"}.union(IMAGE_EXTENSIONS)
+
 @app.get("/")
 def home():
     return {
@@ -27,15 +31,21 @@ def home():
 @app.post("/upload")
 async def upload_pdf(file: UploadFile):
 
-    if not file.filename.lower().endswith(".pdf"):
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
         return {
-            "error": "Only PDF files are allowed"
+            "error": f"Unsupported file type '{ext}'. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
         }
 
     contents = await file.read()
 
-    with open("uploaded.pdf", "wb") as f:
+    saved_filename = f"uploaded{ext}"
+    with open(saved_filename, "wb") as f:
         f.write(contents)
+
+    # Save target filename to track uploaded document
+    with open("uploaded_target.txt", "w") as f:
+        f.write(saved_filename)
 
     return {
         "filename": file.filename
@@ -44,7 +54,15 @@ async def upload_pdf(file: UploadFile):
 @app.post("/analyze")
 def analyze_document():
 
-    documents = load_pdf("uploaded.pdf")
+    if os.path.exists("uploaded_target.txt"):
+        with open("uploaded_target.txt", "r") as f:
+            target_path = f.read().strip()
+    elif os.path.exists("uploaded.pdf"):
+        target_path = "uploaded.pdf"
+    else:
+        return {"error": "No document uploaded yet. Please upload a PDF or image first."}
+
+    documents = load_any_document(target_path)
 
     document_type = classify_document(documents)
 
