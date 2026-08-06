@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile
 from rag.loader import load_pdf
 from rag.summary_generator import generate_document_summary
 from rag.retriever import get_retriever
@@ -13,6 +13,11 @@ from rag.document_classifier import classify_document
 from rag.session import set_document_type
 from pydantic import BaseModel
 from rag.context_fusion import build_context
+from rag.language import (
+    resolve_language,
+    translate_document,
+    translate_question_for_retrieval,
+)
 
 app = FastAPI(
     title="LexiClear+ API"
@@ -76,20 +81,51 @@ def analyze_document():
 class QuestionRequest(BaseModel):
 
     question: str
+    language: str | None = None
 
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
 
+    try:
+        language = resolve_language(request.language, request.question)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    search_question = translate_question_for_retrieval(request.question, language)
+
     # Build combined context from:
     # 1. Uploaded document
     # 2. Legal corpus
-    context = build_context(request.question)
+    context = build_context(search_question)
 
     answer = generate_answer(
         request.question,
-        context
+        context,
+        language,
     )
 
     return {
-        "answer": answer
+        "answer": answer,
+        "language": language,
+    }
+
+
+class TranslationRequest(BaseModel):
+
+    language: str
+
+
+@app.post("/translate")
+def translate_uploaded_document(request: TranslationRequest):
+    """Translate every page of the uploaded legal document without changing references."""
+    try:
+        language = resolve_language(request.language)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    documents = load_pdf("uploaded.pdf")
+
+    return {
+        "language": language,
+        "pages": translate_document(documents, language),
     }

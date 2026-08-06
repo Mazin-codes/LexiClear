@@ -5,7 +5,7 @@ from rag.providers.llm_factory import generate
 load_dotenv()
 
 
-def generate_answer(question, context):
+def generate_answer(question, context, language="English"):
 
     document_context = context["document_context"]
     legal_context = context["legal_context"]
@@ -43,9 +43,14 @@ Instructions:
 5. If the document does not contain the requested information,
    explicitly say so.
 6. Do not invent clauses.
-7. Explain everything in simple English.
+7. Answer entirely in {language}, using clear, plain language appropriate for a
+   non-lawyer. Keep all clause numbers, section references, case citations, statute
+   names, dates, monetary amounts, percentages, and quoted legal text exactly as they
+   appear in the sources.
+8. The headings below must also be in {language}; do not translate legal citations.
 
-Return your answer in exactly this format.
+Return the answer in these five sections, translating each section heading into
+{language}:
 
 ## Direct Answer
 
