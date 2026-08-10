@@ -9,3 +9,4 @@ transformers
 pypdf
 python-dotenv
 groq
+python-multipart

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiClear+ | Backend API Testing Console</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <header class="dev-header">
+        <div class="header-left">
+            <span class="logo-icon"><i class="fa-solid fa-square-terminal"></i></span>
+            <div>
+                <h1>LexiClear<span class="plus">+</span> API Console</h1>
+                <p class="subtitle">Developer Sandbox & Backend Testing Interface</p>
+            </div>
+        </div>
+        <div class="server-status">
+            <span class="status-indicator online"></span>
+            <span class="status-text">Server: localhost:8000</span>
+        </div>
+    </header>
+
+    <main class="dev-container">
+        <!-- Sidebar Navigation -->
+        <aside class="dev-sidebar">
+            <div class="sidebar-section">
+                <h3>API Endpoints</h3>
+                <nav class="endpoint-nav">
+                    <button class="nav-btn active" data-endpoint="upload">
+                        <span class="method post">POST</span>
+                        <span class="path">/upload</span>
+                    </button>
+                    <button class="nav-btn" data-endpoint="analyze">
+                        <span class="method post">POST</span>
+                        <span class="path">/analyze</span>
+                    </button>
+                    <button class="nav-btn" data-endpoint="ask">
+                        <span class="method post">POST</span>
+                        <span class="path">/ask</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section flex-grow">
+                <h3>Request History</h3>
+                <div class="history-list" id="history-container">
+                    <div class="history-empty">No requests executed yet.</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Playground Area -->
+        <section class="dev-playground">
+            <!-- /upload Endpoint Panel -->
+            <div class="endpoint-panel fade-in" id="panel-upload">
+                <div class="panel-header">
+                    <h2><span class="method post">POST</span> /upload</h2>
+                    <p>Upload a PDF document to the server storage for subsequent analysis.</p>
+                </div>
+                
+                <div class="playground-grid">
+                    <!-- Request Pane -->
+                    <div class="pane pane-request">
+                        <h3>Request</h3>
+                        <div class="request-group">
+                            <label>Headers</label>
+                            <div class="headers-display">
+                                <code>Content-Type: multipart/form-data</code>
+                            </div>
+                        </div>
+                        <div class="request-group">
+                            <label>Form Data (file)</label>
+                            <div class="file-dropzone" id="file-dropzone">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Drag PDF here or click to browse</span>
+                                <input type="file" id="file-input" accept="application/pdf" style="display:none;">
+                                <div class="selected-file-name" id="selected-file-name"></div>
+                            </div>
+                        </div>
+                        <button class="btn btn-execute" id="btn-execute-upload" disabled>
+                            <i class="fa-solid fa-play"></i> Send Request
+                        </button>
+                    </div>
+
+                    <!-- Response Pane -->
+                    <div class="pane pane-response">
+                        <div class="response-header">
+                            <h3>Response</h3>
+                            <div class="response-meta hidden" id="meta-upload">
+                                <span class="badge status-badge" id="status-upload">200 OK</span>
+                                <span class="time-badge" id="time-upload">45ms</span>
+                            </div>
+                        </div>
+                        <div class="response-body">
+                            <pre><code class="language-json" id="code-upload">{ "info": "Execute request to see response." }</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- /analyze Endpoint Panel -->
+            <div class="endpoint-panel hidden fade-in" id="panel-analyze">
+                <div class="panel-header">
+                    <h2><span class="method post">POST</span> /analyze</h2>
+                    <p>Analyze the uploaded PDF to classify its agreement type, calculate complexity metrics, group clauses, and detect liabilities.</p>
+                </div>
+                
+                <div class="playground-grid">
+                    <!-- Request Pane -->
+                    <div class="pane pane-request">
+                        <h3>Request</h3>
+                        <div class="request-group">
+                            <label>Headers</label>
+                            <div class="headers-display">
+                                <code>Content-Type: application/json</code>
+                            </div>
+                        </div>
+                        <div class="request-group">
+                            <label>Parameters</label>
+                            <div class="parameter-info">
+                                <span class="param-name">None required</span>
+                                <span class="param-desc">(Saves uploaded document path internally)</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-execute" id="btn-execute-analyze">
+                            <i class="fa-solid fa-play"></i> Send Request
+                        </button>
+                    </div>
+
+                    <!-- Response Pane -->
+                    <div class="pane pane-response">
+                        <div class="response-header">
+                            <h3>Response</h3>
+                            <div class="response-meta hidden" id="meta-analyze">
+                                <span class="badge status-badge" id="status-analyze">200 OK</span>
+                                <span class="time-badge" id="time-analyze">1200ms</span>
+                            </div>
+                        </div>
+                        <div class="response-body">
+                            <pre><code class="language-json" id="code-analyze">{ "info": "Execute request to see response." }</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- /ask Endpoint Panel -->
+            <div class="endpoint-panel hidden fade-in" id="panel-ask">
+                <div class="panel-header">
+                    <h2><span class="method post">POST</span> /ask</h2>
+                    <p>Ask natural language questions about the document and return context-aware simplified explanations with citations.</p>
+                </div>
+                
+                <div class="playground-grid">
+                    <!-- Request Pane -->
+                    <div class="pane pane-request">
+                        <h3>Request</h3>
+                        <div class="request-group">
+                            <label>Headers</label>
+                            <div class="headers-display">
+                                <code>Content-Type: application/json</code>
+                            </div>
+                        </div>
+                        <div class="request-group">
+                            <label>Body (JSON)</label>
+                            <textarea class="json-textarea" id="textarea-ask-body" spellcheck="false">{
+  "question": "What is the penalty for breaking the bond?"
+}</textarea>
+                        </div>
+                        <button class="btn btn-execute" id="btn-execute-ask">
+                            <i class="fa-solid fa-play"></i> Send Request
+                        </button>
+                    </div>
+
+                    <!-- Response Pane -->
+                    <div class="pane pane-response">
+                        <div class="response-header">
+                            <h3>Response</h3>
+                            <div class="response-meta hidden" id="meta-ask">
+                                <span class="badge status-badge" id="status-ask">200 OK</span>
+                                <span class="time-badge" id="time-ask">850ms</span>
+                            </div>
+                        </div>
+                        <div class="response-body">
+                            <pre><code class="language-json" id="code-ask">{ "info": "Execute request to see response." }</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="dev-footer">
+        <p>LexiClear+ Backend API Sandbox Interface • Built with Advanced Agentic Coding</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

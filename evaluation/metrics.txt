@@ -1,0 +1,15 @@
+============================================
+LexiClear Evaluation Report
+============================================
+
+Questions Evaluated : 25
+
+Average Semantic Similarity : 0.7953
+Average BERTScore Precision : 0.9360
+Average BERTScore Recall : 0.9359
+Average BERTScore F1 : 0.9356
+QA Accuracy : 0.8000
+
+Note:
+Semantic Similarity and BERTScore measure similarity between expected and generated answers.
+QA Accuracy is calculated using a semantic similarity threshold of 0.70.

@@ -1,4 +1,6 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
 from rag.loader import load_pdf
 from rag.summary_generator import generate_document_summary
 from rag.retriever import get_retriever
@@ -18,11 +20,11 @@ app = FastAPI(
     title="LexiClear+ API"
 )
 
-@app.get("/")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
 def home():
-    return {
-        "message": "LexiClear+ API Running"
-    }
+    return FileResponse("static/index.html")
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile):
@@ -43,6 +45,13 @@ async def upload_pdf(file: UploadFile):
 
 @app.post("/analyze")
 def analyze_document():
+
+    import os
+    if not os.path.exists("uploaded.pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="No document has been uploaded yet. Please upload a PDF first."
+        )
 
     documents = load_pdf("uploaded.pdf")
 
@@ -79,6 +88,13 @@ class QuestionRequest(BaseModel):
 
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
+
+    import os
+    if not os.path.exists("chroma_docs"):
+        raise HTTPException(
+            status_code=400,
+            detail="Vector database not found. Please upload and analyze a document first."
+        )
 
     # Build combined context from:
     # 1. Uploaded document
