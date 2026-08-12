@@ -297,3 +297,48 @@ Text:
     "is_blank_page": False,
 })
     return translations
+def translate_answer(answer: str, language: str) -> str:
+    """
+    Translate the final English answer into the requested language.
+    The legal reasoning has already been done in English, so this
+    function only performs a faithful translation.
+    """
+
+    if language == "English":
+        return answer
+
+    prompt = f"""
+You are an expert legal translator.
+
+Translate the following legal answer from English into {language}.
+
+STRICT RULES
+
+1. Translate faithfully.
+2. Do NOT add information.
+3. Do NOT remove information.
+4. Preserve Markdown formatting.
+5. Preserve headings.
+6. Preserve bullet lists.
+7. Preserve numbering.
+8. Preserve clause numbers.
+9. Preserve section numbers.
+10. Preserve dates.
+11. Preserve currency.
+12. Preserve legal citations.
+13. Never translate official Act names such as:
+   - Indian Contract Act, 1872
+   - Transfer of Property Act, 1882
+   - Arbitration and Conciliation Act, 1996
+   - Information Technology Act, 2000
+   - Digital Personal Data Protection Act, 2023
+   - Consumer Protection Act, 2019
+
+Return ONLY the translated answer.
+
+Answer:
+
+{answer}
+"""
+
+    return generate(prompt).strip()

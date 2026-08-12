@@ -17,7 +17,13 @@ from rag.language import (
     resolve_language,
     translate_document,
     translate_question_for_retrieval,
+    translate_answer,
 )
+from rag.obligation_extractor import extract_obligations
+from rag.rights_extractor import extract_rights
+from fastapi.responses import FileResponse
+import uuid
+from rag.tts import generate_speech
 
 app = FastAPI(
     title="LexiClear+ API"
@@ -71,12 +77,18 @@ def analyze_document():
 
     risks = analyze_risks(documents)
 
+    obligations = extract_obligations(documents)
+
+    rights = extract_rights(documents)
+
     return {
     "document_type": document_type,
     "summary": summary,
     "complexity": complexity,
     "clauses": clauses,
-    "risks": risks
+    "risks": risks,
+    "obligations": obligations,
+    "rights": rights
 }
 class QuestionRequest(BaseModel):
 
@@ -91,21 +103,29 @@ def ask_question(request: QuestionRequest):
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    search_question = translate_question_for_retrieval(request.question, language)
+    # Translate non-English question into English for retrieval
+    search_question = translate_question_for_retrieval(
+        request.question,
+        language
+    )
 
-    # Build combined context from:
-    # 1. Uploaded document
-    # 2. Legal corpus
+    # Retrieve document + legal context
     context = build_context(search_question)
 
-    answer = generate_answer(
-        request.question,
-        context,
-        language,
+    # Generate ONE authoritative answer in English
+    english_answer = generate_answer(
+    search_question,
+    context,
+)
+
+    # Translate only if needed
+    final_answer = translate_answer(
+        english_answer,
+        language
     )
 
     return {
-        "answer": answer,
+        "answer": final_answer,
         "language": language,
     }
 
@@ -114,18 +134,52 @@ class TranslationRequest(BaseModel):
 
     language: str
 
+class SpeechRequest(BaseModel):
+    text: str
+    language: str
 
-@app.post("/translate")
-def translate_uploaded_document(request: TranslationRequest):
-    """Translate every page of the uploaded legal document without changing references."""
+
+@app.post("/speak")
+def speak(request: SpeechRequest):
+
+    # Validate and normalize language
     try:
         language = resolve_language(request.language)
+
     except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise HTTPException(
+            status_code=422,
+            detail=str(error)
+        ) from error
 
-    documents = load_pdf("uploaded.pdf")
+    # Validate text
+    if not request.text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Text cannot be empty."
+        )
 
-    return {
-        "language": language,
-        "pages": translate_document(documents, language),
-    }
+    try:
+
+        output_path = generate_speech(
+            text=request.text,
+            language=language,
+            output_path="answer.wav",
+        )
+
+        return FileResponse(
+            output_path,
+            media_type="audio/wav",
+            filename="lexiclear_answer.wav",
+        )
+
+    except Exception as error:
+
+        print("\n========== TTS ERROR ==========")
+        print(error)
+        print("===============================\n")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Speech generation failed: {error}"
+        ) from error

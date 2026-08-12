@@ -5,7 +5,7 @@ from rag.providers.llm_factory import generate
 load_dotenv()
 
 
-def generate_answer(question, context, language="English"):
+def generate_answer(question, context):
 
     document_context = context["document_context"]
     legal_context = context["legal_context"]
@@ -40,17 +40,23 @@ Instructions:
 3. Never contradict the uploaded document.
 4. If the uploaded document conflicts with general legal guidance,
    clearly mention the difference.
-5. If the document does not contain the requested information,
+5. If the uploaded document does not contain the requested information,
    explicitly say so.
 6. Do not invent clauses.
-7. Answer entirely in {language}, using clear, plain language appropriate for a
-   non-lawyer. Keep all clause numbers, section references, case citations, statute
-   names, dates, monetary amounts, percentages, and quoted legal text exactly as they
-   appear in the sources.
-8. The headings below must also be in {language}; do not translate legal citations.
+7. Answer ONLY in English.
+8. Use clear, simple language suitable for a non-lawyer.
+9. Preserve all:
+   - Clause numbers
+   - Section numbers
+   - Article numbers
+   - Dates
+   - Monetary amounts
+   - Percentages
+   - Statute names
+   - Case citations
+10. Never fabricate legal references.
 
-Return the answer in these five sections, translating each section heading into
-{language}:
+Return the answer using EXACTLY these headings.
 
 ## Direct Answer
 
@@ -83,4 +89,9 @@ If none is available, write "No relevant legal reference found.")
 """
 
     answer = generate(prompt)
-    return answer + format_legal_sources(context.get("legal_chunks", []))
+
+    answer += format_legal_sources(
+        context.get("legal_chunks", [])
+    )
+
+    return answer
