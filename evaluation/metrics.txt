@@ -4,7 +4,7 @@ LexiClear Evaluation Report
 
 Questions Evaluated : 25
 
-Average Semantic Similarity : 0.7953
+Average Semantic Similarity : 0.7954
 Average BERTScore Precision : 0.9360
 Average BERTScore Recall : 0.9359
 Average BERTScore F1 : 0.9356
