@@ -11,8 +11,10 @@ venv/
 # Environment Variables
 .env
 
-# ChromaDB
+# ChromaDB vector stores (auto-generated at runtime)
 chroma_db/
+chroma_docs/
+chroma_legal/
 
 # Mac Files
 .DS_Store
@@ -28,3 +30,17 @@ chroma_db/
 
 # Local runtime state
 document_session.json
+
+# Uploaded documents (runtime files, not for version control)
+uploaded.pdf
+uploaded.png
+uploaded.jpg
+uploaded.jpeg
+uploaded.webp
+uploaded.bmp
+uploaded.tiff
+uploaded.tif
+uploaded_target.txt
+
+# Misc runtime files
+run.txt
