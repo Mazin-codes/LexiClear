@@ -40,12 +40,23 @@ Instructions:
 3. Never contradict the uploaded document.
 4. If the uploaded document conflicts with general legal guidance,
    clearly mention the difference.
-5. If the document does not contain the requested information,
+5. If the uploaded document does not contain the requested information,
    explicitly say so.
 6. Do not invent clauses.
-7. Explain everything in simple English.
+7. Answer ONLY in English.
+8. Use clear, simple language suitable for a non-lawyer.
+9. Preserve all:
+   - Clause numbers
+   - Section numbers
+   - Article numbers
+   - Dates
+   - Monetary amounts
+   - Percentages
+   - Statute names
+   - Case citations
+10. Never fabricate legal references.
 
-Return your answer in exactly this format.
+Return the answer using EXACTLY these headings.
 
 ## Direct Answer
 
