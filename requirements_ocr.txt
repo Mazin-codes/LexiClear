@@ -1,4 +1,0 @@
-# OCR Dependencies for LexiClear Photo Support
-pillow>=10.0.0
-pytesseract>=0.3.10
-easyocr>=1.7.0
