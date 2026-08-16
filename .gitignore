@@ -22,6 +22,7 @@ chroma_legal/
 # VS Code
 .vscode/
 
+
 # JetBrains
 .idea/
 
@@ -44,3 +45,7 @@ uploaded_target.txt
 
 # Misc runtime files
 run.txt
+
+# Audio files
+*.mp3
+*.wav
