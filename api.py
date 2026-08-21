@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from rag.loader import load_pdf
 from rag.ocr_loader import load_any_document, IMAGE_EXTENSIONS
 from rag.summary_generator import generate_document_summary
@@ -31,6 +32,14 @@ app = FastAPI(
     title="LexiClear+ API"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 ALLOWED_EXTENSIONS = {".pdf"}.union(IMAGE_EXTENSIONS)
 
 @app.get("/")
@@ -38,6 +47,29 @@ def home():
     return {
         "message": "LexiClear+ API Running"
     }
+
+@app.get("/document")
+def get_document():
+    """Serve the last uploaded document so PDF.js can render it in the browser."""
+    if os.path.exists("uploaded_target.txt"):
+        with open("uploaded_target.txt", "r") as f:
+            target_path = f.read().strip()
+    elif os.path.exists("uploaded.pdf"):
+        target_path = "uploaded.pdf"
+    else:
+        raise HTTPException(status_code=404, detail="No document uploaded yet.")
+
+    if not os.path.exists(target_path):
+        raise HTTPException(status_code=404, detail=f"File not found: {target_path}")
+
+    media_type = "application/pdf"
+    ext = os.path.splitext(target_path)[1].lower()
+    if ext in {".jpg", ".jpeg"}:
+        media_type = "image/jpeg"
+    elif ext == ".png":
+        media_type = "image/png"
+
+    return FileResponse(target_path, media_type=media_type)
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile):

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LexiClear+ | Ask LexiClear AI</title>
+<meta name="description" content="Ask LexiClear+ AI questions about your legal documents and get structured, plain-language answers." />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="api.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "tertiary": "#000000", "surface-container": "#f0edef", "secondary": "#296770",
+                    "secondary-fixed-dim": "#95d0db", "inverse-surface": "#303032", "inverse-primary": "#bec6e0",
+                    "on-secondary-container": "#2e6b75", "tertiary-fixed-dim": "#dec29a", "primary-container": "#131b2e",
+                    "outline-variant": "#c6c6cd", "surface-variant": "#e4e2e4", "inverse-on-surface": "#f3f0f2",
+                    "surface-dim": "#dcd9db", "on-surface-variant": "#45464d", "primary": "#000000",
+                    "on-error": "#ffffff", "on-secondary-fixed-variant": "#044e58", "on-tertiary": "#ffffff",
+                    "outline": "#76777d", "on-tertiary-container": "#98805d", "on-tertiary-fixed": "#271901",
+                    "surface-bright": "#fcf8fa", "surface-container-highest": "#e4e2e4", "primary-fixed-dim": "#bec6e0",
+                    "error": "#ba1a1a", "primary-fixed": "#dae2fd", "on-primary": "#ffffff",
+                    "tertiary-fixed": "#fcdeb5", "on-secondary": "#ffffff", "on-background": "#1b1b1d",
+                    "on-tertiary-fixed-variant": "#574425", "tertiary-container": "#271901", "surface-container-high": "#eae7e9",
+                    "background": "#fcf8fa", "on-error-container": "#93000a", "on-primary-fixed": "#131b2e",
+                    "on-primary-fixed-variant": "#3f465c", "error-container": "#ffdad6", "surface": "#fcf8fa",
+                    "secondary-fixed": "#b1ecf8", "secondary-container": "#aeeaf5", "surface-container-low": "#f6f3f5",
+                    "surface-tint": "#565e74", "surface-container-lowest": "#ffffff", "on-secondary-fixed": "#001f24",
+                    "on-surface": "#1b1b1d", "on-primary-container": "#7c839b"
+                },
+                borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                spacing: {
+                    "gutter": "24px", "container-max": "1440px", "margin-desktop": "32px",
+                    "unit": "4px", "document-width": "850px", "margin-mobile": "16px", "sidebar-width": "280px"
+                },
+                fontFamily: {
+                    "title-lg": ["Inter"], "display-lg": ["Inter"], "label-md": ["Inter"],
+                    "label-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"], "body-md": ["Inter"], "headline-lg-mobile": ["Inter"]
+                },
+                fontSize: {
+                    "title-lg": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                    "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                    "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+                    "label-sm": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+                    "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                    "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                    "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                    "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                    "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #F1F5F9; }
+    .citation-chip { background-color: #EFF6FF; color: #2563EB; border: 1px solid transparent; transition: border-color 0.2s ease; }
+    .citation-chip:hover { border-color: #2563EB; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Typing indicator */
+    @keyframes typing-dot { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+    .typing-dot { animation: typing-dot 1.2s infinite ease-in-out; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    /* Message animation */
+    @keyframes slide-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .msg-animate { animation: slide-up 0.3s ease; }
+</style>
+</head>
+<body class="text-on-surface bg-[#F1F5F9] min-h-screen flex flex-col md:flex-row">
+
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col w-sidebar-width h-screen fixed left-0 top-0 bg-surface border-r border-outline-variant py-gutter px-4 z-50">
+    <div class="flex items-center gap-4 mb-8 px-4">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">balance</span>
+        </div>
+        <div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant">Legal AI Assistant</p>
+        </div>
+    </div>
+    <div class="flex flex-col gap-2 flex-grow">
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="index.html">
+            <span class="material-symbols-outlined">dashboard</span> Dashboard
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="analyze.html">
+            <span class="material-symbols-outlined">description</span> Documents
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="analyze.html">
+            <span class="material-symbols-outlined">analytics</span> Analysis
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary border-l-4 border-secondary font-bold bg-surface-container-high font-body-md text-body-md scale-[0.99] transition-transform duration-150" href="ask.html">
+            <span class="material-symbols-outlined">psychology</span> Ask LexiClear
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="risks.html">
+            <span class="material-symbols-outlined">report_problem</span> Risks
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+            <span class="material-symbols-outlined">assignment_turned_in</span> Obligations
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+            <span class="material-symbols-outlined">gavel</span> Rights
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+            <span class="material-symbols-outlined">language</span> Language
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content Wrapper -->
+<div class="flex-grow flex flex-col md:ml-sidebar-width w-full md:max-w-[calc(100%-280px)] min-h-screen relative">
+    <!-- TopAppBar -->
+    <header class="flex justify-between items-center w-full px-margin-desktop h-20 bg-surface border-b border-outline-variant sticky top-0 z-40">
+        <div class="flex items-center gap-6">
+            <div class="relative hidden sm:block">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                <input class="pl-10 pr-4 py-2 border border-outline-variant rounded-full bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md text-body-md w-64 transition-all" placeholder="Search..." type="text"/>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <nav class="hidden lg:flex gap-6">
+                <a class="text-on-surface-variant hover:text-primary transition-colors font-title-lg text-title-lg" href="analyze.html">Analyze</a>
+                <a class="text-on-surface-variant hover:text-primary transition-colors font-title-lg text-title-lg" href="#">Listen</a>
+                <a class="text-on-surface-variant hover:text-primary transition-colors font-title-lg text-title-lg" href="#">Download</a>
+            </nav>
+            <button onclick="clearChat()" class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md text-label-md hover:bg-primary/90 transition-colors shadow-sm">
+                New Chat
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Interface Workspace -->
+    <main class="flex-grow flex flex-col items-center justify-start p-margin-mobile md:p-gutter relative overflow-hidden h-[calc(100vh-80px)]">
+        <!-- Chat Container -->
+        <div class="w-full max-w-[850px] h-full flex flex-col bg-[#FAF9F6] border border-[#E2E8F0] rounded-xl shadow-[0px_4px_12px_rgba(15,23,42,0.05)] overflow-hidden relative">
+            <!-- Chat Header -->
+            <div class="flex flex-col items-center justify-center py-8 border-b border-[#E2E8F0] bg-white">
+                <span class="material-symbols-outlined text-4xl text-secondary mb-2">psychology</span>
+                <h2 class="font-headline-lg text-headline-lg text-primary text-center">Ask LexiClear</h2>
+                <p class="font-body-md text-body-md text-on-surface-variant text-center mt-2">Ask questions about your uploaded document.</p>
+            </div>
+
+            <!-- Chat History Area -->
+            <div id="chat-history" class="flex-grow overflow-y-auto no-scrollbar p-6 flex flex-col gap-8 pb-32">
+                <!-- Sample message shown on load -->
+                <div class="flex justify-end msg-animate">
+                    <div class="bg-surface-container-high px-6 py-4 rounded-2xl rounded-tr-sm max-w-[80%] border border-outline-variant/30">
+                        <p class="font-body-md text-body-md text-on-surface">Can the tenant make alterations to the property?</p>
+                    </div>
+                </div>
+
+                <!-- AI Response -->
+                <div class="flex justify-start msg-animate">
+                    <div class="flex gap-4 max-w-[90%]">
+                        <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="material-symbols-outlined text-secondary">psychology</span>
+                        </div>
+                        <div class="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-6 flex flex-col gap-6 w-full">
+                            <!-- 1. Direct Answer -->
+                            <div>
+                                <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">1. Direct Answer</h4>
+                                <p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                                    <strong class="font-semibold text-primary">Yes, subject to conditions.</strong> The tenant may make non-structural alterations, provided they obtain prior written consent from the landlord. Structural alterations are strictly prohibited.
+                                    <a class="inline-flex items-center gap-1 citation-chip px-2 py-0.5 rounded-full font-label-sm text-label-sm ml-2 align-middle" href="#">
+                                        <span class="material-symbols-outlined text-[14px]">article</span> Page 4 • Clause 2.c
+                                    </a>
+                                </p>
+                            </div>
+                            <hr class="border-outline-variant/30"/>
+                            <!-- 2. What the document says -->
+                            <div>
+                                <div class="flex justify-between items-end mb-2">
+                                    <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">2. What the document says</h4>
+                                    <button class="text-secondary hover:text-secondary/80 font-label-sm text-label-sm flex items-center gap-1 transition-colors">
+                                        <span class="material-symbols-outlined text-[16px]">visibility</span> View Source
+                                    </button>
+                                </div>
+                                <div class="bg-surface-container-low p-4 rounded-lg border-l-2 border-outline-variant text-on-surface-variant font-body-md text-body-md italic text-sm">
+                                    "The Tenant shall not make any structural alterations or additions to the Demised Premises without the express prior written consent of the Landlord, which consent shall not be unreasonably withheld for non-structural interior modifications."
+                                </div>
+                            </div>
+                            <!-- 3. Legal Perspective -->
+                            <div>
+                                <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">3. Legal Perspective</h4>
+                                <p class="font-body-md text-body-md text-on-surface leading-relaxed text-sm">
+                                    This is a standard "qualified covenant" against alterations. The phrase "shall not be unreasonably withheld" provides the tenant with some statutory protection under landlord-tenant law, meaning the landlord cannot arbitrarily refuse minor cosmetic changes, provided proper process is followed.
+                                </p>
+                            </div>
+                            <!-- 4. Practical Meaning -->
+                            <div>
+                                <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">4. Practical Meaning</h4>
+                                <p class="font-body-md text-body-md text-on-surface leading-relaxed text-sm">
+                                    You can paint walls, install removable shelving, or change carpets, but you must ask the landlord first in writing. You cannot knock down walls, change plumbing, or alter electrical wiring.
+                                </p>
+                            </div>
+                            <!-- 5. Recommendation -->
+                            <div class="bg-[#EFF6FF]/50 border border-[#2563EB]/20 p-4 rounded-lg flex gap-3">
+                                <span class="material-symbols-outlined text-[#2563EB] mt-0.5">lightbulb</span>
+                                <div>
+                                    <h4 class="font-label-sm text-label-sm text-[#2563EB] uppercase tracking-wider mb-1">5. Recommendation</h4>
+                                    <p class="font-body-md text-body-md text-on-surface leading-relaxed text-sm">
+                                        Before undertaking any work, draft a formal request outlining the proposed non-structural changes. Wait for explicit written approval to avoid breach of lease conditions.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing indicator (hidden by default) -->
+                <div id="typing-indicator" class="hidden flex justify-start">
+                    <div class="flex gap-4 max-w-[90%]">
+                        <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-secondary">psychology</span>
+                        </div>
+                        <div class="bg-white border border-[#E2E8F0] rounded-xl shadow-sm px-5 py-4 flex items-center gap-1.5">
+                            <div class="w-2 h-2 rounded-full bg-secondary typing-dot"></div>
+                            <div class="w-2 h-2 rounded-full bg-secondary typing-dot"></div>
+                            <div class="w-2 h-2 rounded-full bg-secondary typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area (Fixed Bottom within Container) -->
+            <div class="absolute bottom-0 left-0 w-full bg-white border-t border-[#E2E8F0] p-4 flex flex-col gap-4 shadow-[0px_-4px_12px_rgba(15,23,42,0.02)]">
+                <!-- Suggested Questions -->
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button class="whitespace-nowrap px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5 font-label-md text-label-md transition-all text-sm" onclick="sendSuggestion(this)">
+                        What are my obligations?
+                    </button>
+                    <button class="whitespace-nowrap px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5 font-label-md text-label-md transition-all text-sm" onclick="sendSuggestion(this)">
+                        What are the major risks?
+                    </button>
+                    <button class="whitespace-nowrap px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5 font-label-md text-label-md transition-all text-sm" onclick="sendSuggestion(this)">
+                        When does the lease terminate?
+                    </button>
+                    <button class="whitespace-nowrap px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5 font-label-md text-label-md transition-all text-sm" onclick="sendSuggestion(this)">
+                        Can I sublet the premises?
+                    </button>
+                </div>
+                <!-- Input Box -->
+                <div class="relative">
+                    <input id="chat-input" class="w-full pl-6 pr-14 py-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md text-body-md shadow-sm" placeholder="Ask a question about your document..." type="text" onkeydown="if(event.key==='Enter') sendMessage()"/>
+                    <button onclick="sendMessage()" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors">
+                        <span class="material-symbols-outlined">send</span>
+                    </button>
+                </div>
+                <div class="text-center">
+                    <span class="font-label-sm text-label-sm text-outline-variant">LexiClear+ may make mistakes. Please verify critical legal information.</span>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden flex fixed bottom-0 left-0 w-full justify-center items-center gap-8 py-4 px-8 bg-inverse-surface shadow-lg z-50 rounded-t-xl">
+    <a class="flex flex-col items-center justify-center text-inverse-on-surface/70 hover:bg-white/10 transition-all font-label-sm text-label-sm p-2 rounded-lg" href="index.html">
+        <span class="material-symbols-outlined mb-1">dashboard</span> Dashboard
+    </a>
+    <a class="flex flex-col items-center justify-center text-secondary-fixed-dim font-bold scale-95 transition-all font-label-sm text-label-sm p-2 rounded-lg" href="ask.html">
+        <span class="material-symbols-outlined mb-1">psychology</span> Ask
+    </a>
+    <a class="flex flex-col items-center justify-center text-inverse-on-surface/70 hover:bg-white/10 transition-all font-label-sm text-label-sm p-2 rounded-lg" href="analyze.html">
+        <span class="material-symbols-outlined mb-1">description</span> Docs
+    </a>
+</nav>
+
+<script>
+    let firstMessage = true; // used to clear the sample message on first send
+    let currentLanguage = null; // auto-detect by default
+
+    function sendSuggestion(btn) {
+        const text = btn.innerText.trim();
+        document.getElementById('chat-input').value = text;
+        sendMessage();
+    }
+
+    async function sendMessage() {
+        const input    = document.getElementById('chat-input');
+        const question = input.value.trim();
+        if (!question) return;
+
+        const history = document.getElementById('chat-history');
+        const typing  = document.getElementById('typing-indicator');
+
+        // Clear sample message on first real send
+        if (firstMessage) {
+            // Remove all children except typing indicator
+            [...history.children].forEach(el => {
+                if (el.id !== 'typing-indicator') el.remove();
+            });
+            firstMessage = false;
+        }
+
+        // Add user message bubble
+        const userMsg = document.createElement('div');
+        userMsg.className = 'flex justify-end msg-animate';
+        userMsg.innerHTML = `<div class="bg-surface-container-high px-6 py-4 rounded-2xl rounded-tr-sm max-w-[80%] border border-outline-variant/30">
+            <p class="font-body-md text-body-md text-on-surface">${escapeHtml(question)}</p>
+        </div>`;
+        history.insertBefore(userMsg, typing);
+        input.value = '';
+
+        // Show typing indicator
+        typing.classList.remove('hidden');
+        history.scrollTop = history.scrollHeight;
+
+        try {
+            // Call real backend
+            const result = await askQuestion(question, currentLanguage);
+            typing.classList.add('hidden');
+
+            const aiMsg = buildAIResponse(result.answer, result.language);
+            history.insertBefore(aiMsg, typing);
+            history.scrollTop = history.scrollHeight;
+
+        } catch (err) {
+            typing.classList.add('hidden');
+            const errMsg = document.createElement('div');
+            errMsg.className = 'flex justify-start msg-animate';
+            errMsg.innerHTML = `<div class="flex gap-4 max-w-[90%]">
+                <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0 mt-1">
+                    <span class="material-symbols-outlined text-error">error</span>
+                </div>
+                <div class="bg-white border border-error/30 rounded-xl shadow-sm p-5">
+                    <p class="font-body-md text-body-md text-error text-sm">${escapeHtml(err.message)}</p>
+                    <p class="text-xs text-on-surface-variant mt-1">Make sure a document is uploaded and the backend is running.</p>
+                </div>
+            </div>`;
+            history.insertBefore(errMsg, typing);
+            history.scrollTop = history.scrollHeight;
+        }
+    }
+
+    function buildAIResponse(answerText, lang) {
+        const div = document.createElement('div');
+        div.className = 'flex justify-start msg-animate';
+        const msgId = 'msg-' + Date.now();
+        div.innerHTML = `
+        <div class="flex gap-4 max-w-[90%]">
+            <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                <span class="material-symbols-outlined text-secondary">psychology</span>
+            </div>
+            <div class="bg-white border border-[#E2E8F0] rounded-xl shadow-sm p-6 flex flex-col gap-4 w-full">
+                <div>
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Answer</h4>
+                    <div id="${msgId}" class="font-body-md text-body-md text-on-surface leading-relaxed text-sm">${renderMarkdown(answerText)}</div>
+                </div>
+                <div class="flex items-center gap-3 pt-2 border-t border-outline-variant/30">
+                    <button
+                        onclick="handleListen(this, '${msgId}', '${escapeHtml(lang || 'en')}')"
+                        class="flex items-center gap-1.5 text-secondary hover:text-secondary/80 font-label-md text-label-md transition-colors text-sm">
+                        <span class="material-symbols-outlined text-[18px]">volume_up</span> Listen
+                    </button>
+                    <span class="text-outline-variant">|</span>
+                    <span class="font-label-sm text-label-sm text-outline">Language: ${escapeHtml((lang || 'en').toUpperCase())}</span>
+                </div>
+            </div>
+        </div>`;
+        return div;
+    }
+
+    // ── Text-to-Speech handler ─────────────────────────────────────────────────
+    let currentAudio = null;
+
+    async function handleListen(btn, msgId, lang) {
+        // Stop any currently playing audio
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> Loading...';
+        btn.disabled = true;
+
+        try {
+            const textEl = document.getElementById(msgId);
+            const text   = textEl ? textEl.innerText : '';
+            if (!text) throw new Error('No text to speak');
+
+            const audioUrl = await speakText(text, lang || 'en');
+            currentAudio   = new Audio(audioUrl);
+            currentAudio.play();
+
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">stop_circle</span> Playing...';
+            currentAudio.addEventListener('ended', () => {
+                btn.innerHTML = originalHTML;
+                btn.disabled  = false;
+                currentAudio  = null;
+            });
+
+        } catch (err) {
+            btn.innerHTML = originalHTML;
+            btn.disabled  = false;
+            showToast('TTS error: ' + err.message, 'error');
+        }
+    }
+
+    function clearChat() {
+        const history = document.getElementById('chat-history');
+        const typing  = document.getElementById('typing-indicator');
+        [...history.children].forEach(el => {
+            if (el.id !== 'typing-indicator') el.remove();
+        });
+        firstMessage = true;
+    }
+</script>
+</body>
+</html>

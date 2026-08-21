@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LexiClear+ | Document Analysis Workspace</title>
+<meta name="description" content="LexiClear+ Document Analysis — review legal documents with AI-powered risk and clause detection." />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<!-- PDF.js for real page rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="api.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "tertiary": "#000000","surface-container": "#f0edef","secondary": "#296770",
+                    "secondary-fixed-dim": "#95d0db","inverse-surface": "#303032","inverse-primary": "#bec6e0",
+                    "on-secondary-container": "#2e6b75","tertiary-fixed-dim": "#dec29a","primary-container": "#131b2e",
+                    "outline-variant": "#c6c6cd","surface-variant": "#e4e2e4","inverse-on-surface": "#f3f0f2",
+                    "surface-dim": "#dcd9db","on-surface-variant": "#45464d","primary": "#000000",
+                    "on-error": "#ffffff","on-secondary-fixed-variant": "#044e58","on-tertiary": "#ffffff",
+                    "outline": "#76777d","on-tertiary-container": "#98805d","on-tertiary-fixed": "#271901",
+                    "surface-bright": "#fcf8fa","surface-container-highest": "#e4e2e4","primary-fixed-dim": "#bec6e0",
+                    "error": "#ba1a1a","primary-fixed": "#dae2fd","on-primary": "#ffffff",
+                    "tertiary-fixed": "#fcdeb5","on-secondary": "#ffffff","on-background": "#1b1b1d",
+                    "on-tertiary-fixed-variant": "#574425","tertiary-container": "#271901","surface-container-high": "#eae7e9",
+                    "background": "#fcf8fa","on-error-container": "#93000a","on-primary-fixed": "#131b2e",
+                    "on-primary-fixed-variant": "#3f465c","error-container": "#ffdad6","surface": "#fcf8fa",
+                    "secondary-fixed": "#b1ecf8","secondary-container": "#aeeaf5","surface-container-low": "#f6f3f5",
+                    "surface-tint": "#565e74","surface-container-lowest": "#ffffff","on-secondary-fixed": "#001f24",
+                    "on-surface": "#1b1b1d","on-primary-container": "#7c839b"
+                },
+                borderRadius: {"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},
+                spacing: {
+                    "gutter":"24px","container-max":"1440px","margin-desktop":"32px",
+                    "unit":"4px","document-width":"850px","margin-mobile":"16px","sidebar-width":"280px"
+                },
+                fontFamily: {
+                    "title-lg":["Inter"],"display-lg":["Inter"],"label-md":["Inter"],
+                    "label-sm":["Inter"],"body-lg":["Inter"],"headline-md":["Inter"],
+                    "headline-lg":["Inter"],"body-md":["Inter"]
+                },
+                fontSize: {
+                    "title-lg":["20px",{lineHeight:"28px",fontWeight:"600"}],
+                    "display-lg":["48px",{lineHeight:"56px",letterSpacing:"-0.02em",fontWeight:"700"}],
+                    "label-md":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"500"}],
+                    "label-sm":["12px",{lineHeight:"16px",fontWeight:"600"}],
+                    "body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],
+                    "headline-md":["24px",{lineHeight:"32px",fontWeight:"600"}],
+                    "headline-lg":["32px",{lineHeight:"40px",letterSpacing:"-0.01em",fontWeight:"600"}],
+                    "body-md":["16px",{lineHeight:"24px",fontWeight:"400"}]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; }
+    .citation-chip { background-color: #EFF6FF; color: #2563EB; border: 1px solid transparent; transition: border-color 0.2s; }
+    .citation-chip:hover { border-color: #2563EB; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c6c6cd; border-radius: 3px; }
+    .tab-btn.active { color: #296770; border-bottom: 2px solid #296770; font-weight: 700; }
+    .tab-btn { color: #45464d; border-bottom: 2px solid transparent; transition: color 0.15s; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .skeleton { animation: pulse 1.5s ease-in-out infinite; background: #e4e2e4; border-radius: 4px; }
+    #pdf-pages-container canvas { display: block; margin: 0 auto 24px; box-shadow: 0 4px 20px rgba(0,0,0,.12); border-radius: 2px; }
+    .risk-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .risk-card:hover { transform: translateX(2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+    .risk-card.active { outline: 2px solid #296770; background-color: #F0FDFA; }
+    .thumb-item.active canvas { outline: 2px solid #296770; }
+    #citation-popup { animation: fadeInUp 0.2s ease; }
+    @keyframes fadeInUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+</style>
+</head>
+<body class="text-on-background font-body-md h-screen overflow-hidden flex">
+
+<!-- Citation Popup Modal -->
+<div id="citation-popup" class="hidden fixed z-[9998] bg-white border border-outline-variant rounded-xl shadow-2xl p-5 max-w-sm w-[320px]">
+    <div class="flex items-start justify-between mb-3">
+        <h4 id="citation-title" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-[10px]">📍 SOURCE CITATION</h4>
+        <button onclick="closeCitation()" class="text-outline hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+    <div id="citation-body" class="text-sm text-on-surface leading-relaxed"></div>
+    <div id="citation-chips" class="flex flex-wrap gap-2 mt-3"></div>
+</div>
+
+<!-- SideNavBar -->
+<nav class="bg-surface w-sidebar-width h-screen fixed left-0 top-0 border-r border-outline-variant flex flex-col py-gutter px-4 z-50">
+    <div class="flex items-center gap-4 mb-8 px-2">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-on-primary">balance</span>
+        </div>
+        <div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant">Legal AI Assistant</p>
+        </div>
+    </div>
+    <ul class="flex flex-col gap-2 flex-1">
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="index.html">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-title-lg text-title-lg">Dashboard</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary border-l-4 border-secondary font-bold bg-surface-container-high" href="analyze.html">
+            <span class="material-symbols-outlined">description</span>
+            <span class="font-title-lg text-title-lg">Documents</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="analyze.html">
+            <span class="material-symbols-outlined">analytics</span>
+            <span class="font-title-lg text-title-lg">Analysis</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="ask.html">
+            <span class="material-symbols-outlined">psychology</span>
+            <span class="font-title-lg text-title-lg">Ask LexiClear</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="risks.html">
+            <span class="material-symbols-outlined">report_problem</span>
+            <span class="font-title-lg text-title-lg">Risks</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+            <span class="material-symbols-outlined">assignment_turned_in</span>
+            <span class="font-title-lg text-title-lg">Obligations</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+            <span class="material-symbols-outlined">gavel</span>
+            <span class="font-title-lg text-title-lg">Rights</span>
+        </a></li>
+        <li class="mt-auto"><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+            <span class="material-symbols-outlined">language</span>
+            <span class="font-title-lg text-title-lg">Language</span>
+        </a></li>
+    </ul>
+</nav>
+
+<!-- Main Content Area -->
+<div class="ml-sidebar-width flex-1 flex flex-col h-screen w-[calc(100%-280px)]">
+    <!-- TopAppBar -->
+    <header class="bg-surface sticky top-0 z-40 border-b border-outline-variant flex justify-between items-center w-full px-margin-desktop h-20">
+        <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-outline">description</span>
+            <div>
+                <h2 id="header-filename" class="font-title-lg text-title-lg text-primary">Loading...</h2>
+                <p id="header-doctype" class="font-label-sm text-label-sm text-on-surface-variant">Analyzing document</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex gap-6">
+                <button class="font-label-md text-label-md text-secondary font-bold border-b-2 border-secondary pb-1">Analyze</button>
+                <button id="btn-listen" onclick="handleListen()" class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">volume_up</span> Listen
+                </button>
+                <button id="btn-download" onclick="handleDownload()" class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">download</span> Download
+                </button>
+            </div>
+            <a href="ask.html" class="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-opacity-90 transition-opacity flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">psychology</span>
+                Ask Question
+            </a>
+        </div>
+    </header>
+
+    <!-- 3-Column Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        <!-- LEFT: Page Thumbnails -->
+        <div id="thumbnail-panel" class="w-64 bg-surface-container-lowest border-r border-outline-variant py-4 overflow-y-auto hidden md:block custom-scrollbar">
+            <div class="flex justify-between items-center mb-4 px-4">
+                <h3 class="font-label-md text-label-md font-bold text-on-surface">Pages</h3>
+                <span class="font-label-sm text-label-sm text-outline" id="page-count-label">—</span>
+            </div>
+            <div id="page-thumbnails" class="flex flex-col gap-3 px-4">
+                <!-- Populated by PDF.js -->
+            </div>
+        </div>
+
+        <!-- CENTER: PDF Document Viewer -->
+        <div class="flex-1 bg-surface-container-low overflow-y-auto flex justify-center custom-scrollbar" id="pdf-scroll-container">
+            <div class="w-full max-w-[900px] pt-8 pb-12 px-4">
+                <!-- Loading state -->
+                <div id="pdf-loading" class="flex flex-col items-center justify-center h-64 gap-4">
+                    <div class="w-10 h-10 rounded-full border-4 border-outline-variant border-t-secondary spinner"></div>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Loading document...</p>
+                </div>
+                <!-- No-document state -->
+                <div id="no-doc-state" class="hidden flex flex-col items-center justify-center h-64 gap-4">
+                    <span class="material-symbols-outlined text-6xl text-outline-variant">upload_file</span>
+                    <h3 class="font-headline-md text-headline-md text-primary font-semibold">No Document Uploaded</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant text-center">Go to the Dashboard to upload and analyze a document first.</p>
+                    <a href="index.html" class="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-opacity-90 mt-2">Go to Dashboard</a>
+                </div>
+                <!-- PDF pages rendered here -->
+                <div id="pdf-pages-container"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Analysis Panel -->
+        <div class="w-[400px] bg-surface-container-lowest border-l border-outline-variant flex flex-col">
+            <!-- Panel Tabs -->
+            <div class="flex border-b border-outline-variant px-1 overflow-x-auto">
+                <button class="tab-btn active px-3 py-3 font-label-md text-label-md whitespace-nowrap text-sm" onclick="switchTab(this,'overview')">Overview</button>
+                <button class="tab-btn px-3 py-3 font-label-md text-label-md whitespace-nowrap text-sm" onclick="switchTab(this,'risks')">Risks</button>
+                <button class="tab-btn px-3 py-3 font-label-md text-label-md whitespace-nowrap text-sm" onclick="switchTab(this,'obligations')">Obligations</button>
+                <button class="tab-btn px-3 py-3 font-label-md text-label-md whitespace-nowrap text-sm" onclick="switchTab(this,'rights')">Rights</button>
+                <button class="tab-btn px-3 py-3 font-label-md text-label-md whitespace-nowrap text-sm" onclick="switchTab(this,'clauses')">Clauses</button>
+            </div>
+            <!-- Panel Content -->
+            <div class="p-gutter overflow-y-auto flex-1 flex flex-col gap-4 custom-scrollbar" id="panel-content">
+                <div id="panel-skeleton" class="flex flex-col gap-4">
+                    <div class="skeleton h-6 w-1/2"></div>
+                    <div class="skeleton h-24 w-full rounded-lg"></div>
+                    <div class="skeleton h-32 w-full rounded-lg"></div>
+                    <div class="skeleton h-20 w-full rounded-lg"></div>
+                </div>
+                <div id="panel-body" class="hidden flex flex-col gap-4"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc       = null;
+    let currentPage  = 1;
+    let currentData  = null;
+    let currentTab   = 'overview';
+    let currentAudio = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        currentData = getCachedAnalysis();
+        const fname = getCachedFilename();
+
+        if (!currentData) {
+            document.getElementById('pdf-loading').classList.add('hidden');
+            document.getElementById('no-doc-state').classList.remove('hidden');
+            document.getElementById('header-filename').textContent = 'No Document';
+            document.getElementById('header-doctype').textContent  = 'Upload a document first';
+            return;
+        }
+
+        document.getElementById('header-filename').textContent = fname;
+        document.getElementById('header-doctype').textContent  =
+            (currentData.document_type || 'Legal Document') + ' • Analyzed';
+
+        await loadPDF();
+        renderTab('overview');
+    });
+
+    async function loadPDF() {
+        const loadingEl = document.getElementById('pdf-loading');
+        const container = document.getElementById('pdf-pages-container');
+
+        try {
+            const pdfUrl = 'http://localhost:8000/document';
+            pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+            const numPages = pdfDoc.numPages;
+
+            document.getElementById('page-count-label').textContent = `${numPages} pages`;
+            loadingEl.classList.add('hidden');
+
+            for (let p = 1; p <= numPages; p++) {
+                await renderPage(p, container);
+            }
+        } catch (err) {
+            console.warn('PDF load failed:', err);
+            loadingEl.classList.add('hidden');
+            container.innerHTML = buildSummaryFallback(currentData);
+            document.getElementById('page-count-label').textContent = '—';
+        }
+    }
+
+    async function renderPage(pageNum, container) {
+        const page     = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.3 });
+
+        const wrapper  = document.createElement('div');
+        wrapper.className = 'relative pdf-page-wrapper mb-6';
+        wrapper.dataset.page = pageNum;
+
+        const canvas     = document.createElement('canvas');
+        canvas.width     = viewport.width;
+        canvas.height    = viewport.height;
+        canvas.className = 'rounded-sm shadow-md bg-white';
+
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        wrapper.appendChild(canvas);
+        container.appendChild(wrapper);
+
+        buildThumbnail(page, pageNum);
+    }
+
+    async function buildThumbnail(page, pageNum) {
+        const thumbViewport = page.getViewport({ scale: 0.18 });
+        const canvas = document.createElement('canvas');
+        canvas.width  = thumbViewport.width;
+        canvas.height = thumbViewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: thumbViewport }).promise;
+
+        const thumbContainer = document.getElementById('page-thumbnails');
+        const item = document.createElement('div');
+        item.className = 'thumb-item cursor-pointer group ' + (pageNum === 1 ? 'active' : '');
+        item.dataset.page = pageNum;
+        item.onclick = () => scrollToPage(pageNum);
+        item.innerHTML = `<div class="border ${pageNum === 1 ? 'border-2 border-secondary' : 'border-outline-variant'} rounded group-hover:border-secondary transition-colors overflow-hidden"></div>
+        <p class="text-center font-label-sm text-label-sm mt-1 ${pageNum === 1 ? 'text-secondary font-bold' : 'text-on-surface-variant'}">${pageNum}</p>`;
+        item.querySelector('div').appendChild(canvas);
+        thumbContainer.appendChild(item);
+    }
+
+    function scrollToPage(pageNum) {
+        document.querySelectorAll('.thumb-item').forEach(t => {
+            const isActive = parseInt(t.dataset.page) === pageNum;
+            t.classList.toggle('active', isActive);
+            const border = t.querySelector('div');
+            if (border) border.className = `border ${isActive ? 'border-2 border-secondary' : 'border-outline-variant'} rounded group-hover:border-secondary transition-colors overflow-hidden`;
+            const label = t.querySelector('p');
+            if (label) label.className = `text-center font-label-sm text-label-sm mt-1 ${isActive ? 'text-secondary font-bold' : 'text-on-surface-variant'}`;
+        });
+
+        const pageEl = document.querySelector(`#pdf-pages-container [data-page="${pageNum}"]`);
+        if (pageEl) {
+            pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            currentPage = pageNum;
+        }
+    }
+
+    function showCitation(event, risk) {
+        event.stopPropagation();
+        const popup   = document.getElementById('citation-popup');
+        const titleEl = document.getElementById('citation-title');
+        const bodyEl  = document.getElementById('citation-body');
+        const chipsEl = document.getElementById('citation-chips');
+
+        titleEl.textContent = '📍 SOURCE CITATION';
+        bodyEl.innerHTML    = '';
+        chipsEl.innerHTML   = '';
+
+        let content = '';
+        if (risk.explanation)    content += `<p class="mb-2"><strong class="text-primary font-medium block text-xs">Explanation:</strong> ${escapeHtml(risk.explanation)}</p>`;
+        if (risk.impact)         content += `<p class="mb-2"><strong class="text-primary font-medium block text-xs">Impact:</strong> ${escapeHtml(risk.impact)}</p>`;
+        if (risk.recommendation) content += `<p class="mb-1 text-secondary font-medium block text-xs"><strong>Recommendation:</strong> ${escapeHtml(risk.recommendation)}</p>`;
+        bodyEl.innerHTML = content || '<p class="text-xs text-on-surface-variant">No additional details available.</p>';
+
+        if (risk.clause && risk.clause.trim()) {
+            chipsEl.innerHTML += `<span class="citation-chip inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px]">
+                <span class="material-symbols-outlined text-[12px]">gavel</span> ${escapeHtml(risk.clause)}
+            </span>`;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        popup.style.top  = Math.max(8, rect.top - 10) + 'px';
+        popup.style.left = (rect.left - 335) + 'px';
+        if (parseInt(popup.style.left) < 8) popup.style.left = (rect.right + 12) + 'px';
+        popup.classList.remove('hidden');
+
+        document.querySelectorAll('.risk-card').forEach(c => c.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        if (risk.page) scrollToPage(parseInt(risk.page));
+    }
+
+    function closeCitation() {
+        document.getElementById('citation-popup').classList.add('hidden');
+        document.querySelectorAll('.risk-card').forEach(c => c.classList.remove('active'));
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#citation-popup') && !e.target.closest('.risk-card')) {
+            closeCitation();
+        }
+    });
+
+    function buildSummaryFallback(d) {
+        const summary = d?.summary || 'No summary available.';
+        const fname   = getCachedFilename();
+        return `<div class="bg-white border border-outline-variant rounded-sm shadow-sm p-12">
+            <h1 class="font-headline-md text-headline-md font-bold mb-6 text-center text-primary">${escapeHtml(fname.replace(/\.[^.]+$/, '').replace(/_/g,' '))}</h1>
+            <div class="p-5 bg-secondary-container/20 border-l-4 border-secondary rounded-r-lg">
+                <h2 class="font-title-lg text-title-lg font-semibold mb-3 text-primary flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[18px]">summarize</span> Document Summary
+                </h2>
+                <div class="text-sm leading-relaxed">${renderMarkdown(summary)}</div>
+            </div>
+        </div>`;
+    }
+
+    async function handleListen() {
+        const btn = document.getElementById('btn-listen');
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">volume_up</span> Listen';
+            return;
+        }
+
+        const text = currentData?.summary;
+        if (!text) { showToast('No summary to read aloud.', 'info'); return; }
+
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px] spinner">refresh</span> Loading...';
+        btn.disabled = true;
+        try {
+            const url = await speakText(text, 'en');
+            currentAudio = new Audio(url);
+            currentAudio.play();
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">stop_circle</span> Stop';
+            btn.disabled = false;
+            currentAudio.addEventListener('ended', () => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">volume_up</span> Listen';
+                currentAudio = null;
+            });
+        } catch (err) {
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">volume_up</span> Listen';
+            btn.disabled = false;
+            showToast('TTS failed: ' + err.message, 'error');
+        }
+    }
+
+    function handleDownload() {
+        if (!currentData) { showToast('No analysis to download.', 'info'); return; }
+        const fname = getCachedFilename().replace(/\.[^.]+$/, '');
+        const lines = [
+            `# LexiClear+ Analysis Report`,
+            `**Document:** ${getCachedFilename()}`,
+            `**Type:** ${currentData.document_type || '—'}`,
+            `**Complexity:** ${currentData.complexity?.score ?? '—'}`,
+            '',
+            '## Summary',
+            currentData.summary || '',
+            '',
+            '## Risks',
+            currentData.risks || 'None detected.',
+        ];
+        const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = `${fname}_LexiClear_Analysis.md`;
+        a.click();
+        showToast('Analysis downloaded!', 'success');
+    }
+
+    function switchTab(btn, tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = tab;
+        closeCitation();
+        if (currentData) renderTab(tab);
+    }
+
+    function renderTab(tab) {
+        const skeleton = document.getElementById('panel-skeleton');
+        const body     = document.getElementById('panel-body');
+        skeleton.classList.add('hidden');
+        body.classList.remove('hidden');
+
+        const d = currentData;
+        let html = '';
+        if      (tab === 'overview')     html = buildOverviewPanel(d);
+        else if (tab === 'risks')        html = buildRisksPanel(d.risks || '');
+        else if (tab === 'obligations')  html = buildGroupedPanel(d.obligations || {}, 'obligation', 'Obligations');
+        else if (tab === 'rights')       html = buildGroupedPanel(d.rights || {}, 'right', 'Rights');
+        else if (tab === 'clauses')      html = buildClausesPanel(d.clauses || '');
+
+        body.innerHTML = html;
+    }
+
+    function buildOverviewPanel(d) {
+        const complexity = d.complexity || {};
+        const score      = complexity.score ?? complexity.complexity_score ?? '—';
+        const docType    = d.document_type || 'Unknown';
+        const summary    = d.summary || 'No summary available.';
+
+        const risks = parseRisksFromMarkdown(d.risks || '');
+        const highCount = risks.filter(r => r.severity === 'high').length;
+        const medCount  = risks.filter(r => r.severity === 'medium').length;
+        const lowCount  = risks.filter(r => r.severity === 'low').length;
+
+        return `
+        <div class="flex items-start justify-between">
+            <div>
+                <span class="inline-block bg-surface-container-high px-2 py-1 rounded font-label-sm text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider text-[10px]">Document Type</span>
+                <h3 class="font-title-lg text-title-lg font-bold text-primary capitalize">${escapeHtml(docType.replace(/_/g,' '))}</h3>
+            </div>
+            <div class="flex flex-col items-center flex-shrink-0">
+                <div class="w-12 h-12 rounded-full border-4 border-secondary flex items-center justify-center font-bold text-secondary">${escapeHtml(String(score))}</div>
+                <span class="font-label-sm text-label-sm text-outline mt-1">Complexity</span>
+            </div>
+        </div>
+
+        <div class="bg-white border border-outline-variant rounded-lg p-4 shadow-sm">
+            <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2 text-[10px]">
+                <span class="material-symbols-outlined text-[14px]">summarize</span> Plain-Language Summary
+            </h4>
+            <div class="text-sm leading-relaxed">${renderMarkdown(summary)}</div>
+        </div>
+
+        <div class="bg-white border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+            <div class="p-3 border-b border-outline-variant bg-surface-container-lowest">
+                <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2 text-[10px]">
+                    <span class="material-symbols-outlined text-[14px]">report_problem</span> Risks Detected
+                </h4>
+            </div>
+            <div class="flex divide-x divide-outline-variant">
+                <div class="flex-1 flex flex-col items-center py-3 gap-1">
+                    <span class="text-xl font-bold text-red-600">${highCount}</span>
+                    <span class="font-label-sm text-label-sm text-red-600 text-[10px]">High</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center py-3 gap-1">
+                    <span class="text-xl font-bold text-amber-500">${medCount}</span>
+                    <span class="font-label-sm text-label-sm text-amber-600 text-[10px]">Medium</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center py-3 gap-1">
+                    <span class="text-xl font-bold text-emerald-600">${lowCount}</span>
+                    <span class="font-label-sm text-label-sm text-emerald-700 text-[10px]">Low</span>
+                </div>
+            </div>
+        </div>
+
+        <a href="risks.html" class="w-full border border-primary text-primary font-label-md text-label-md py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors text-sm">
+            <span class="material-symbols-outlined text-[16px]">report_problem</span> View Full Risk Analysis
+        </a>`;
+    }
+
+    function buildRisksPanel(risksMarkdown) {
+        const risks = parseRisksFromMarkdown(risksMarkdown);
+
+        if (!risks.length) {
+            if (!risksMarkdown || risksMarkdown.trim() === 'No significant legal risks detected.') {
+                return `<div class="flex flex-col items-center justify-center h-40 gap-2 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-3xl text-emerald-500">check_circle</span>
+                    <p class="text-sm">No significant risks detected.</p>
+                </div>`;
+            }
+            return `<div class="text-sm leading-relaxed">${renderMarkdown(risksMarkdown)}</div>
+                    <a href="risks.html" class="w-full border border-primary text-primary py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors text-sm mt-2">
+                        <span class="material-symbols-outlined text-[16px]">open_in_new</span> View Detailed Risks
+                    </a>`;
+        }
+
+        const CFG = {
+            high:   { lbl:'High',   lblCls:'text-red-700 bg-red-50',       bar:'bg-red-600',    icon:'error',   ic:'text-red-500' },
+            medium: { lbl:'Medium', lblCls:'text-amber-800 bg-amber-50',   bar:'bg-amber-500',  icon:'warning', ic:'text-amber-500' },
+            low:    { lbl:'Low',    lblCls:'text-emerald-800 bg-emerald-50',bar:'bg-emerald-500',icon:'info',    ic:'text-emerald-500' },
+        };
+
+        const cards = risks.map((r) => {
+            const cfg = CFG[r.severity] || CFG.low;
+            const encoded = encodeURIComponent(JSON.stringify(r));
+            return `
+            <div class="risk-card bg-white border border-outline-variant rounded-lg overflow-hidden relative shadow-sm"
+                 onclick="showCitation(event, JSON.parse(decodeURIComponent('${encoded}')))">
+                <div class="absolute left-0 top-0 bottom-0 w-1 ${cfg.bar}"></div>
+                <div class="p-4 pl-5">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="${cfg.lblCls} font-label-sm text-label-sm px-2 py-0.5 rounded uppercase tracking-wider font-bold text-[10px]">${cfg.lbl} Risk</span>
+                        <span class="material-symbols-outlined ${cfg.ic} text-[18px]">${cfg.icon}</span>
+                    </div>
+                    <h3 class="font-semibold text-primary text-sm leading-tight mb-2">${escapeHtml(r.title)}</h3>
+                    ${r.explanation ? `<p class="text-xs text-on-surface-variant leading-relaxed line-clamp-2">${escapeHtml(r.explanation)}</p>` : ''}
+                    <div class="flex items-center gap-1.5 mt-3 text-secondary text-xs font-medium">
+                        <span class="material-symbols-outlined text-[13px]">touch_app</span>
+                        Click for citation details
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        return cards + `<a href="risks.html" class="w-full border border-primary text-primary py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors text-sm mt-1">
+            <span class="material-symbols-outlined text-[16px]">open_in_new</span> View Full Risk Page
+        </a>`;
+    }
+
+    function buildGroupedPanel(data, fieldName, title) {
+        if (!data || typeof data !== 'object') {
+            return `<p class="text-sm text-on-surface-variant">No ${title.toLowerCase()} data available.</p>`;
+        }
+
+        const groups = [
+            { key: 'tenant',   label: 'Tenant',   icon: 'person',    color: 'text-blue-600' },
+            { key: 'landlord', label: 'Landlord',  icon: 'business',  color: 'text-purple-600' },
+            { key: 'shared',   label: 'Shared',    icon: 'handshake', color: 'text-teal-600' },
+        ];
+
+        let html = '';
+        for (const g of groups) {
+            const items = data[g.key] || [];
+            if (!items.length) continue;
+            html += `
+            <div class="bg-white border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+                <div class="px-4 py-3 border-b border-outline-variant flex items-center gap-2 bg-surface-container-lowest">
+                    <span class="material-symbols-outlined text-[15px] ${g.color}">${g.icon}</span>
+                    <h4 class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">${g.label} ${title}</h4>
+                    <span class="ml-auto bg-surface-container font-label-sm text-label-sm text-on-surface-variant px-2 py-0.5 rounded-full text-[10px]">${items.length}</span>
+                </div>
+                <ul class="flex flex-col divide-y divide-outline-variant/50">
+                    ${items.map(item => {
+                        const text   = item[fieldName] || item.obligation || item.right || '';
+                        const clause = item.clause || '';
+                        const page   = item.page ? String(item.page) : '';
+                        return `<li class="px-4 py-3 flex flex-col gap-1.5 hover:bg-surface-container-lowest transition-colors">
+                            <p class="text-sm text-on-surface leading-relaxed">${escapeHtml(text)}</p>
+                            ${(clause || page) ? `<div class="flex flex-wrap gap-1.5">
+                                ${clause ? `<span class="citation-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]">
+                                    <span class="material-symbols-outlined text-[12px]">gavel</span> Clause ${escapeHtml(clause)}
+                                </span>` : ''}
+                                ${page ? `<button onclick="scrollToPage(${parseInt(page)})" class="citation-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]">
+                                    <span class="material-symbols-outlined text-[12px]">description</span> Page ${escapeHtml(page)}
+                                </button>` : ''}
+                            </div>` : ''}
+                        </li>`;
+                    }).join('')}
+                </ul>
+            </div>`;
+        }
+
+        return html || `<p class="text-sm text-on-surface-variant">No ${title.toLowerCase()} found.</p>`;
+    }
+
+    function buildClausesPanel(clauses) {
+        if (!clauses) return `<p class="text-sm text-on-surface-variant">No clause data available.</p>`;
+        return `<div class="text-sm leading-relaxed">${renderMarkdown(String(clauses))}</div>`;
+    }
+</script>
+</body>
+</html>

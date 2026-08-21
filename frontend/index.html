@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LexiClear+ | Dashboard</title>
+<meta name="description" content="LexiClear+ Legal AI Assistant - Upload, analyze, and understand your legal documents instantly." />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="api.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "tertiary": "#000000",
+                    "surface-container": "#f0edef",
+                    "secondary": "#296770",
+                    "secondary-fixed-dim": "#95d0db",
+                    "inverse-surface": "#303032",
+                    "inverse-primary": "#bec6e0",
+                    "on-secondary-container": "#2e6b75",
+                    "tertiary-fixed-dim": "#dec29a",
+                    "primary-container": "#131b2e",
+                    "outline-variant": "#c6c6cd",
+                    "surface-variant": "#e4e2e4",
+                    "inverse-on-surface": "#f3f0f2",
+                    "surface-dim": "#dcd9db",
+                    "on-surface-variant": "#45464d",
+                    "primary": "#000000",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#044e58",
+                    "on-tertiary": "#ffffff",
+                    "outline": "#76777d",
+                    "on-tertiary-container": "#98805d",
+                    "on-tertiary-fixed": "#271901",
+                    "surface-bright": "#fcf8fa",
+                    "surface-container-highest": "#e4e2e4",
+                    "primary-fixed-dim": "#bec6e0",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#dae2fd",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#fcdeb5",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#1b1b1d",
+                    "on-tertiary-fixed-variant": "#574425",
+                    "tertiary-container": "#271901",
+                    "surface-container-high": "#eae7e9",
+                    "background": "#fcf8fa",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed": "#131b2e",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "error-container": "#ffdad6",
+                    "surface": "#fcf8fa",
+                    "secondary-fixed": "#b1ecf8",
+                    "secondary-container": "#aeeaf5",
+                    "surface-container-low": "#f6f3f5",
+                    "surface-tint": "#565e74",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#001f24",
+                    "on-surface": "#1b1b1d",
+                    "on-primary-container": "#7c839b"
+                },
+                borderRadius: {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                spacing: {
+                    "gutter": "24px",
+                    "container-max": "1440px",
+                    "margin-desktop": "32px",
+                    "unit": "4px",
+                    "document-width": "850px",
+                    "margin-mobile": "16px",
+                    "sidebar-width": "280px"
+                },
+                fontFamily: {
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+                },
+                fontSize: {
+                    "title-lg": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                    "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                    "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+                    "label-sm": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+                    "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                    "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                    "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                    "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                    "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; }
+    .drag-active {
+        border-color: #296770 !important;
+        background-color: #f6f3f5 !important;
+    }
+    /* Mobile sidebar overlay */
+    #mobile-overlay { display: none; }
+    #mobile-overlay.open { display: block; }
+    #mobile-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+    #mobile-sidebar.open { transform: translateX(0); }
+    /* Loading overlay */
+    #loading-overlay { display: none; }
+    #loading-overlay.active { display: flex; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+</style>
+</head>
+<body class="font-body-md text-on-surface antialiased min-h-screen flex">
+
+<!-- Full-Screen Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black/60 z-[9999] flex flex-col items-center justify-center gap-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
+        <div class="w-16 h-16 rounded-full border-4 border-outline-variant border-t-secondary spinner"></div>
+        <h3 class="font-headline-md text-headline-md font-bold text-primary text-center">Analyzing Document</h3>
+        <p id="loading-status" class="font-body-md text-body-md text-on-surface-variant text-center">Uploading your document...</p>
+        <div class="w-full bg-surface-container rounded-full h-1.5">
+            <div id="loading-bar" class="bg-secondary h-1.5 rounded-full transition-all duration-700" style="width: 10%"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Desktop SideNavBar -->
+<nav class="hidden md:flex flex-col h-screen py-gutter px-4 bg-surface w-sidebar-width fixed left-0 top-0 border-r border-outline-variant z-50">
+    <div class="flex items-center gap-4 mb-8 px-4">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary">balance</span>
+        </div>
+        <div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant">Legal AI Assistant</p>
+        </div>
+    </div>
+    <ul class="flex flex-col gap-2">
+        <li>
+            <a id="nav-dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary border-l-4 border-secondary font-bold bg-surface-container-high transition-all duration-150 scale-[0.99]" href="index.html">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="font-title-lg text-title-lg">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="analyze.html">
+                <span class="material-symbols-outlined">description</span>
+                <span class="font-title-lg text-title-lg">Documents</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="analyze.html">
+                <span class="material-symbols-outlined">analytics</span>
+                <span class="font-title-lg text-title-lg">Analysis</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="ask.html">
+                <span class="material-symbols-outlined">psychology</span>
+                <span class="font-title-lg text-title-lg">Ask LexiClear</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="risks.html">
+                <span class="material-symbols-outlined">report_problem</span>
+                <span class="font-title-lg text-title-lg">Risks</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+                <span class="material-symbols-outlined">assignment_turned_in</span>
+                <span class="font-title-lg text-title-lg">Obligations</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+                <span class="material-symbols-outlined">gavel</span>
+                <span class="font-title-lg text-title-lg">Rights</span>
+            </a>
+        </li>
+        <li>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+                <span class="material-symbols-outlined">language</span>
+                <span class="font-title-lg text-title-lg">Language</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Mobile Sidebar Overlay -->
+<div id="mobile-overlay" class="fixed inset-0 bg-black/40 z-40" onclick="toggleMobileSidebar()"></div>
+<nav id="mobile-sidebar" class="fixed left-0 top-0 h-screen w-sidebar-width bg-surface border-r border-outline-variant z-50 flex flex-col py-gutter px-4">
+    <div class="flex items-center gap-4 mb-8 px-4">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary">balance</span>
+        </div>
+        <div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant">Legal AI Assistant</p>
+        </div>
+    </div>
+    <ul class="flex flex-col gap-2">
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary border-l-4 border-secondary font-bold bg-surface-container-high" href="index.html"><span class="material-symbols-outlined">dashboard</span><span>Dashboard</span></a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low" href="analyze.html"><span class="material-symbols-outlined">description</span><span>Documents</span></a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low" href="ask.html"><span class="material-symbols-outlined">psychology</span><span>Ask LexiClear</span></a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low" href="risks.html"><span class="material-symbols-outlined">report_problem</span><span>Risks</span></a></li>
+    </ul>
+</nav>
+
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-sidebar-width p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
+    <!-- Mobile TopBar -->
+    <div class="flex md:hidden items-center justify-between mb-6 pb-4 border-b border-outline-variant">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-on-primary text-[18px]">balance</span>
+            </div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+        </div>
+        <button id="mobile-menu-btn" class="p-2 text-on-surface-variant" onclick="toggleMobileSidebar()">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+    </div>
+
+    <div class="max-w-document-width mx-auto flex flex-col gap-12 mt-4 md:mt-16">
+        <!-- Hero Section -->
+        <section class="text-center md:text-left flex flex-col gap-6">
+            <div class="space-y-4">
+                <h1 class="font-display-lg text-display-lg text-primary tracking-tight leading-tight">Understand your legal documents.</h1>
+                <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                    Upload a document, ask questions, and discover important risks, obligations, rights, and clauses.
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 items-center md:justify-start justify-center">
+                <label for="file-input" class="cursor-pointer bg-primary text-on-primary font-title-lg text-title-lg px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2">
+                    <span class="material-symbols-outlined">upload_file</span>
+                    Upload Document
+                </label>
+                <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg" class="hidden" onchange="handleFileUpload(this)"/>
+                <a href="ask.html" class="bg-transparent border border-primary text-primary font-title-lg text-title-lg px-8 py-4 rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined">forum</span>
+                    Ask about a document
+                </a>
+            </div>
+        </section>
+
+        <!-- Upload Drop Zone -->
+        <section>
+            <div class="border-2 border-dashed border-outline-variant rounded-xl p-12 flex flex-col items-center justify-center gap-4 bg-surface hover:bg-surface-container-low transition-all cursor-pointer shadow-[0px_4px_12px_rgba(15,23,42,0.02)]" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="w-16 h-16 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container mb-2">
+                    <span class="material-symbols-outlined text-4xl">cloud_upload</span>
+                </div>
+                <h3 class="font-headline-md text-headline-md text-primary font-semibold">Drop your legal document here</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant text-center max-w-md">
+                    Supports PDF, PNG, JPG. We automatically run OCR on scanned documents for full text analysis.
+                </p>
+                <div class="mt-4">
+                    <span class="text-secondary font-label-md text-label-md underline">Or click to browse files</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Documents Section -->
+        <section class="space-y-6">
+            <div class="flex justify-between items-end border-b border-outline-variant pb-2">
+                <h2 class="font-headline-md text-headline-md font-semibold text-primary">Recent Documents</h2>
+                <a class="font-label-md text-label-md text-secondary hover:underline" href="#">View All</a>
+            </div>
+            <div id="recent-docs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Populated dynamically by JS -->
+            </div>
+            <div id="no-docs-message" class="hidden text-center py-12 text-on-surface-variant">
+                <span class="material-symbols-outlined text-5xl text-outline-variant mb-4 block">folder_open</span>
+                <p class="font-body-md text-body-md">No documents analyzed yet. Upload one above to get started.</p>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>
+    // Mobile sidebar toggle
+    function toggleMobileSidebar() {
+        document.getElementById('mobile-sidebar').classList.toggle('open');
+        document.getElementById('mobile-overlay').classList.toggle('open');
+    }
+
+    // Drag and drop visual feedback
+    const dropZone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    ['dragenter', 'dragover'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-active'), false));
+    ['dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-active'), false));
+
+    // File drop handler
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) { handleFileUpload({ files }); }
+    });
+
+    // ── Real upload + analyze flow ────────────────────────────────────────────
+    async function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const overlay   = document.getElementById('loading-overlay');
+        const statusEl  = document.getElementById('loading-status');
+        const barEl     = document.getElementById('loading-bar');
+
+        const setStatus = (msg, pct) => {
+            statusEl.textContent = msg;
+            barEl.style.width = pct + '%';
+        };
+
+        overlay.classList.add('active');
+        setStatus('Uploading your document...', 15);
+
+        try {
+            // 1. Upload
+            const uploadResult = await uploadDocument(file);
+            if (uploadResult.error) throw new Error(uploadResult.error);
+
+            setCachedFilename(file.name);
+            clearCache(); // Clear old analysis so fresh data is loaded
+            setCachedFilename(file.name); // restore after clearCache
+
+            setStatus('Extracting text & running OCR...', 35);
+            await new Promise(r => setTimeout(r, 400));
+
+            setStatus('Classifying document type...', 50);
+            await new Promise(r => setTimeout(r, 300));
+
+            setStatus('Analyzing risks, obligations & rights...', 70);
+
+            // 2. Analyze
+            const analysisData = await analyzeDocument();
+            setCachedFilename(file.name);
+            if (analysisData.document_type) setCachedFileType(analysisData.document_type);
+
+            setStatus('Done! Redirecting...', 100);
+            await new Promise(r => setTimeout(r, 500));
+
+            location.href = 'analyze.html';
+
+        } catch (err) {
+            overlay.classList.remove('active');
+            showToast('Error: ' + err.message, 'error');
+            console.error(err);
+        }
+    }
+
+    // ── Recent Documents — show last uploaded doc if available ────────────────
+    function renderRecentDocs() {
+        const grid   = document.getElementById('recent-docs-grid');
+        const noMsg  = document.getElementById('no-docs-message');
+        const cached = getCachedAnalysis();
+        const fname  = getCachedFilename();
+
+        if (!cached || !fname || fname === 'Unknown Document') {
+            grid.classList.add('hidden');
+            noMsg.classList.remove('hidden');
+            return;
+        }
+
+        noMsg.classList.add('hidden');
+        grid.classList.remove('hidden');
+        grid.innerHTML = `
+        <div class="bg-surface border border-surface-variant rounded-lg p-6 shadow-[0px_4px_12px_rgba(15,23,42,0.05)] hover:shadow-md transition-shadow flex flex-col gap-4 cursor-pointer" onclick="location.href='analyze.html'">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-secondary-container rounded text-on-secondary-container">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div>
+                        <h4 class="font-title-lg text-title-lg text-primary truncate max-w-[180px]" title="${escapeHtml(fname)}">${escapeHtml(fname)}</h4>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant">${escapeHtml(getCachedFileType() || 'Legal Document')}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between mt-auto pt-4 border-t border-surface-variant">
+                <span class="px-2 py-1 bg-[#EFF6FF] text-[#2563EB] rounded-full font-label-sm text-label-sm flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">check_circle</span> Analyzed
+                </span>
+                <a href="analyze.html" class="text-secondary font-label-md text-label-md hover:underline flex items-center gap-1">
+                    Open Analysis <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </a>
+            </div>
+        </div>`;
+    }
+
+    renderRecentDocs();
+</script>
+</body>
+</html>
