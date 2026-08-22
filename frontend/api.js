@@ -72,6 +72,20 @@ async function speakText(text, language = "en") {
     return URL.createObjectURL(blob);
 }
 
+// ─── Translation ──────────────────────────────────────────────────────────────
+async function translateText(text, targetLanguage = "Hindi") {
+    const res = await fetch(`${BASE_URL}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, target_language: targetLanguage }),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Translation failed: ${res.status}`);
+    }
+    return res.json();
+}
+
 // ─── HTML escaping ────────────────────────────────────────────────────────────
 function escapeHtml(str) {
     return String(str)

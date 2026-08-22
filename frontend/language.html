@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LexiClear+ | Multilingual Translation</title>
+<meta name="description" content="LexiClear+ Multilingual Translation — translate legal summaries and agreements to Hindi and Kannada." />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="api.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "tertiary": "#000000","surface-container": "#f0edef","secondary": "#296770",
+                    "secondary-fixed-dim": "#95d0db","inverse-surface": "#303032","inverse-primary": "#bec6e0",
+                    "on-secondary-container": "#2e6b75","tertiary-fixed-dim": "#dec29a","primary-container": "#131b2e",
+                    "outline-variant": "#c6c6cd","surface-variant": "#e4e2e4","inverse-on-surface": "#f3f0f2",
+                    "surface-dim": "#dcd9db","on-surface-variant": "#45464d","primary": "#000000",
+                    "on-error": "#ffffff","on-secondary-fixed-variant": "#044e58","on-tertiary": "#ffffff",
+                    "outline": "#76777d","on-tertiary-container": "#98805d","on-tertiary-fixed": "#271901",
+                    "surface-bright": "#fcf8fa","surface-container-highest": "#e4e2e4","primary-fixed-dim": "#bec6e0",
+                    "error": "#ba1a1a","primary-fixed": "#dae2fd","on-primary": "#ffffff",
+                    "tertiary-fixed": "#fcdeb5","on-secondary": "#ffffff","on-background": "#1b1b1d",
+                    "on-tertiary-fixed-variant": "#574425","tertiary-container": "#271901","surface-container-high": "#eae7e9",
+                    "background": "#fcf8fa","on-error-container": "#93000a","on-primary-fixed": "#131b2e",
+                    "on-primary-fixed-variant": "#3f465c","error-container": "#ffdad6","surface": "#fcf8fa",
+                    "secondary-fixed": "#b1ecf8","secondary-container": "#aeeaf5","surface-container-low": "#f6f3f5",
+                    "surface-tint": "#565e74","surface-container-lowest": "#ffffff","on-secondary-fixed": "#001f24",
+                    "on-surface": "#1b1b1d","on-primary-container": "#7c839b"
+                },
+                borderRadius: {"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},
+                spacing: {
+                    "gutter":"24px","container-max":"1440px","margin-desktop":"32px",
+                    "unit":"4px","document-width":"850px","margin-mobile":"16px","sidebar-width":"280px"
+                },
+                fontFamily: {
+                    "title-lg":["Inter"],"display-lg":["Inter"],"label-md":["Inter"],
+                    "label-sm":["Inter"],"body-lg":["Inter"],"headline-md":["Inter"],
+                    "headline-lg":["Inter"],"body-md":["Inter"]
+                },
+                fontSize: {
+                    "title-lg":["20px",{lineHeight:"28px",fontWeight:"600"}],
+                    "display-lg":["48px",{lineHeight:"56px",letterSpacing:"-0.02em",fontWeight:"700"}],
+                    "label-md":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"500"}],
+                    "label-sm":["12px",{lineHeight:"16px",fontWeight:"600"}],
+                    "body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],
+                    "headline-md":["24px",{lineHeight:"32px",fontWeight:"600"}],
+                    "headline-lg":["32px",{lineHeight:"40px",letterSpacing:"-0.01em",fontWeight:"600"}],
+                    "body-md":["16px",{lineHeight:"24px",fontWeight:"400"}]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    body { background-color: #F8FAFC; font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c6c6cd; border-radius: 3px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+    .lang-card { cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+    .lang-card.active { border-color: #296770; background-color: #F0FDFA; }
+    .sec-btn.active { background-color: #296770; color: #ffffff; }
+    .sec-btn { background-color: #e4e2e4; color: #45464d; }
+    #pdf-pages-container canvas { display: block; margin: 0 auto 20px; box-shadow: 0 2px 12px rgba(0,0,0,.1); border-radius: 2px; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased overflow-hidden">
+
+<!-- SideNavBar -->
+<aside class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface flex flex-col py-gutter px-4 border-r border-outline-variant z-50">
+    <div class="flex items-center gap-3 px-2 py-4 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-on-primary">balance</span>
+        </div>
+        <div>
+            <h1 class="font-headline-md text-headline-md font-bold text-primary">LexiClear+</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant">Legal AI Assistant</p>
+        </div>
+    </div>
+    <ul class="flex flex-col gap-2 flex-1">
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="index.html">
+            <span class="material-symbols-outlined">dashboard</span><span class="font-title-lg text-title-lg">Dashboard</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="analyze.html">
+            <span class="material-symbols-outlined">analytics</span><span class="font-title-lg text-title-lg">Analysis</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="ask.html">
+            <span class="material-symbols-outlined">psychology</span><span class="font-title-lg text-title-lg">Ask LexiClear</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="risks.html">
+            <span class="material-symbols-outlined">report_problem</span><span class="font-title-lg text-title-lg">Risks</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="obligations.html">
+            <span class="material-symbols-outlined">assignment_turned_in</span><span class="font-title-lg text-title-lg">Obligations</span>
+        </a></li>
+        <li><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="rights.html">
+            <span class="material-symbols-outlined">gavel</span><span class="font-title-lg text-title-lg">Rights</span>
+        </a></li>
+        <li class="mt-auto"><a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary border-l-4 border-secondary font-bold bg-surface-container-high" href="language.html">
+            <span class="material-symbols-outlined">language</span><span class="font-title-lg text-title-lg">Language</span>
+        </a></li>
+    </ul>
+</aside>
+
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-20 ml-sidebar-width max-w-[calc(100%-280px)] bg-surface sticky top-0 z-40 border-b border-outline-variant">
+    <div class="flex items-center gap-4">
+        <span class="material-symbols-outlined text-outline">language</span>
+        <div>
+            <h2 id="lang-header-title" class="font-title-lg text-title-lg text-primary">Language Translation</h2>
+            <p id="lang-header-sub" class="font-label-sm text-label-sm text-on-surface-variant">Multilingual Legal Assistant</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-6">
+        <div class="flex gap-6">
+            <button id="btn-listen" onclick="handleListenTranslated()" class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">volume_up</span> Listen Audio
+            </button>
+        </div>
+        <a href="ask.html" class="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">psychology</span> Ask Question
+        </a>
+    </div>
+</header>
+
+<!-- Main Workspace -->
+<main class="ml-sidebar-width h-[calc(100vh-80px)] flex flex-row bg-[#F1F5F9]">
+    <!-- PDF Column -->
+    <section class="flex-1 flex flex-col bg-[#F1F5F9] overflow-hidden border-r border-outline-variant">
+        <div class="px-6 py-4 border-b border-outline-variant bg-surface flex justify-between items-center shrink-0">
+            <h2 id="lang-doc-title" class="font-title-lg text-title-lg text-primary">Loading...</h2>
+            <div class="flex gap-1">
+                <button onclick="zoomOut()" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"><span class="material-symbols-outlined">zoom_out</span></button>
+                <button onclick="zoomIn()" class="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"><span class="material-symbols-outlined">zoom_in</span></button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar flex justify-center bg-[#F1F5F9] p-6">
+            <div id="pdf-pages-container" class="w-full max-w-[800px]">
+                <div id="pdf-loading" class="flex flex-col items-center justify-center h-48 gap-3 text-on-surface-variant">
+                    <div class="w-8 h-8 rounded-full border-2 border-outline-variant border-t-secondary spinner"></div>
+                    <p class="text-sm">Loading document...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Language Translation Panel (Right Column) -->
+    <aside class="w-[520px] bg-surface flex flex-col shrink-0 overflow-hidden border-l border-outline-variant">
+        <div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-outline">translate</span>
+                <h3 class="font-title-lg text-title-lg text-primary">Target Language</h3>
+            </div>
+        </div>
+
+        <div class="p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-1">
+            <!-- Language Selection Cards -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="lang-card active bg-white p-3 rounded-xl border flex flex-col items-center gap-1 text-center" onclick="selectLang('English', this)">
+                    <span class="material-symbols-outlined text-secondary">g_translate</span>
+                    <span class="font-bold text-sm text-primary">English</span>
+                    <span class="text-[10px] text-outline">Default</span>
+                </div>
+                <div class="lang-card bg-white p-3 rounded-xl border flex flex-col items-center gap-1 text-center" onclick="selectLang('Hindi', this)">
+                    <span class="material-symbols-outlined text-secondary">translate</span>
+                    <span class="font-bold text-sm text-primary">हिन्दी</span>
+                    <span class="text-[10px] text-outline">Hindi</span>
+                </div>
+                <div class="lang-card bg-white p-3 rounded-xl border flex flex-col items-center gap-1 text-center" onclick="selectLang('Kannada', this)">
+                    <span class="material-symbols-outlined text-secondary">translate</span>
+                    <span class="font-bold text-sm text-primary">ಕನ್ನಡ</span>
+                    <span class="text-[10px] text-outline">Kannada</span>
+                </div>
+            </div>
+
+            <!-- Content Section Selector -->
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Select Content to Translate:</label>
+                <div class="flex gap-2 text-xs">
+                    <button class="sec-btn active px-3 py-1.5 rounded-lg font-medium transition-colors" onclick="selectSection('summary', this)">Summary</button>
+                    <button class="sec-btn px-3 py-1.5 rounded-lg font-medium transition-colors" onclick="selectSection('risks', this)">Risks</button>
+                    <button class="sec-btn px-3 py-1.5 rounded-lg font-medium transition-colors" onclick="selectSection('full', this)">Full Report</button>
+                </div>
+            </div>
+
+            <!-- Translate Action Button -->
+            <button id="btn-translate-action" onclick="performTranslation()" class="w-full bg-secondary text-white font-label-md py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-[18px]">translate</span>
+                Translate <span id="section-name-label">Summary</span> to <span id="target-lang-label">Hindi</span>
+            </button>
+
+            <!-- Translation Output Box -->
+            <div class="bg-white border border-outline-variant rounded-xl p-5 shadow-sm space-y-3 flex-1 flex flex-col min-h-[300px]">
+                <div class="flex justify-between items-center border-b border-outline-variant/60 pb-3">
+                    <h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold text-xs flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px] text-secondary">description</span>
+                        <span id="output-lang-title">English Summary</span>
+                    </h4>
+                    <button onclick="handleListenTranslated()" class="text-xs text-secondary font-bold flex items-center gap-1 hover:underline">
+                        <span class="material-symbols-outlined text-[14px]">volume_up</span> Listen Audio
+                    </button>
+                </div>
+
+                <div id="translation-loading" class="hidden flex-col items-center justify-center py-16 gap-3 text-on-surface-variant">
+                    <div class="w-8 h-8 rounded-full border-2 border-outline-variant border-t-secondary spinner"></div>
+                    <p class="text-xs font-semibold">Translating fully into <span id="loading-lang-label">Hindi</span>...</p>
+                    <p class="text-[11px] text-outline">Translating all sentences, headings, and duties completely.</p>
+                </div>
+
+                <div id="translation-output-text" class="text-sm leading-relaxed text-on-surface overflow-y-auto flex-1 custom-scrollbar">
+                    <!-- Default English Summary rendered here -->
+                </div>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc          = null;
+    let pdfScale        = 1.3;
+    let currentAudio    = null;
+    let selectedLanguage = 'Hindi';
+    let selectedSection  = 'summary';
+    let cachedData      = null;
+    let currentSourceText = '';
+    let translatedText  = '';
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        cachedData  = getCachedAnalysis();
+        const fname = getCachedFilename();
+
+        const titleEl = document.getElementById('lang-doc-title');
+        const hSub    = document.getElementById('lang-header-sub');
+        if (titleEl) titleEl.textContent = fname !== 'Unknown Document' ? fname : 'Legal Document';
+        if (hSub)    hSub.textContent    = cachedData ? (cachedData.document_type || 'Legal Document') + ' • Multilingual Workspace' : 'No document loaded';
+
+        prepareSourceText();
+        document.getElementById('translation-output-text').innerHTML = renderMarkdown(currentSourceText);
+
+        await loadPDF();
+    });
+
+    function prepareSourceText() {
+        if (!cachedData) { currentSourceText = 'No analysis content available.'; return; }
+        if (selectedSection === 'summary') {
+            currentSourceText = cachedData.summary || 'No summary available.';
+        } else if (selectedSection === 'risks') {
+            currentSourceText = cachedData.risks || 'No risks detected.';
+        } else {
+            currentSourceText = `## Document Summary\n${cachedData.summary || ''}\n\n## Risks Analysis\n${cachedData.risks || ''}`;
+        }
+    }
+
+    async function loadPDF() {
+        const container = document.getElementById('pdf-pages-container');
+        const loadingEl = document.getElementById('pdf-loading');
+        try {
+            pdfDoc = await pdfjsLib.getDocument('http://localhost:8000/document').promise;
+            loadingEl?.remove();
+            for (let p = 1; p <= pdfDoc.numPages; p++) await renderPage(p, container);
+        } catch (err) {
+            if (loadingEl) loadingEl.innerHTML = `<p class="text-center text-sm py-12 text-on-surface-variant">Document processed.</p>`;
+        }
+    }
+
+    async function renderPage(pageNum, container) {
+        const page     = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: pdfScale });
+        const wrapper  = document.createElement('div');
+        wrapper.className = 'relative pdf-page-wrapper mb-6';
+        wrapper.dataset.page = pageNum;
+
+        const canvas   = document.createElement('canvas');
+        canvas.width   = viewport.width;
+        canvas.height  = viewport.height;
+        canvas.className = 'rounded-sm shadow-md bg-white';
+
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        wrapper.appendChild(canvas);
+        container.appendChild(wrapper);
+    }
+
+    function zoomIn()  { pdfScale = Math.min(pdfScale + 0.2, 3.0); rerenderAll(); }
+    function zoomOut() { pdfScale = Math.max(pdfScale - 0.2, 0.5); rerenderAll(); }
+
+    async function rerenderAll() {
+        const container = document.getElementById('pdf-pages-container');
+        if (!pdfDoc) return;
+        container.innerHTML = '';
+        for (let p = 1; p <= pdfDoc.numPages; p++) await renderPage(p, container);
+    }
+
+    function selectLang(lang, el) {
+        document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedLanguage = lang;
+        document.getElementById('target-lang-label').textContent = lang;
+    }
+
+    function selectSection(sec, el) {
+        document.querySelectorAll('.sec-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        selectedSection = sec;
+        const labels = { summary: 'Summary', risks: 'Risks', full: 'Full Report' };
+        document.getElementById('section-name-label').textContent = labels[sec];
+        prepareSourceText();
+        if (selectedLanguage === 'English') {
+            document.getElementById('translation-output-text').innerHTML = renderMarkdown(currentSourceText);
+        }
+    }
+
+    async function performTranslation() {
+        prepareSourceText();
+        if (!currentSourceText) { showToast('No text to translate.', 'info'); return; }
+
+        if (selectedLanguage === 'English') {
+            document.getElementById('output-lang-title').textContent = 'English Output';
+            document.getElementById('translation-output-text').innerHTML = renderMarkdown(currentSourceText);
+            translatedText = currentSourceText;
+            showToast('Displaying English text.', 'info');
+            return;
+        }
+
+        const loader = document.getElementById('translation-loading');
+        const output = document.getElementById('translation-output-text');
+        const btn    = document.getElementById('btn-translate-action');
+        const langLbl = document.getElementById('loading-lang-label');
+
+        if (langLbl) langLbl.textContent = selectedLanguage;
+
+        loader.classList.remove('hidden');
+        loader.classList.add('flex');
+        output.classList.add('hidden');
+        btn.disabled = true;
+
+        try {
+            const res = await translateText(currentSourceText, selectedLanguage);
+            translatedText = res.translated_text || res.translated || currentSourceText;
+
+            document.getElementById('output-lang-title').textContent = `${selectedLanguage} Translation`;
+            output.innerHTML = renderMarkdown(translatedText);
+            showToast(`Complete translation to ${selectedLanguage} finished!`, 'success');
+        } catch (err) {
+            showToast('Translation error: ' + err.message, 'error');
+        } finally {
+            loader.classList.add('hidden');
+            loader.classList.remove('flex');
+            output.classList.remove('hidden');
+            btn.disabled = false;
+        }
+    }
+
+    async function handleListenTranslated() {
+        const textToRead = translatedText || currentSourceText;
+        const langCode   = selectedLanguage === 'Hindi' ? 'hi' : selectedLanguage === 'Kannada' ? 'kn' : 'en';
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; return; }
+        showToast(`Generating & playing speech in ${selectedLanguage}...`, 'info');
+        try {
+            const url = await speakText(textToRead, langCode);
+            currentAudio = new Audio(url);
+            currentAudio.play();
+            currentAudio.addEventListener('ended', () => { currentAudio = null; });
+        } catch (err) { showToast('TTS audio failed: ' + err.message, 'error'); }
+    }
+</script>
+</body>
+</html>

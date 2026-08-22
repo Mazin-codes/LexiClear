@@ -182,8 +182,26 @@ def ask_question(request: QuestionRequest):
 
 
 class TranslationRequest(BaseModel):
-
     language: str
+
+class TranslateTextRequest(BaseModel):
+    text: str
+    target_language: str
+
+@app.post("/translate")
+def translate_text(request: TranslateTextRequest):
+    try:
+        lang = resolve_language(request.target_language)
+        translated = translate_answer(request.text, lang)
+        return {
+            "translated_text": translated,
+            "language": lang
+        }
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Translation failed: {error}"
+        ) from error
 
 class SpeechRequest(BaseModel):
     text: str

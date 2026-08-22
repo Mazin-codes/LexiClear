@@ -299,45 +299,26 @@ Text:
     return translations
 def translate_answer(answer: str, language: str) -> str:
     """
-    Translate the final English answer into the requested language.
-    The legal reasoning has already been done in English, so this
-    function only performs a faithful translation.
+    Translate legal text completely into the target language (Hindi, Kannada, etc.).
     """
-
-    if language == "English":
+    if not answer or language == "English":
         return answer
 
     prompt = f"""
-You are an expert legal translator.
+You are an expert professional legal translator specializing in Indian languages ({language}).
 
-Translate the following legal answer from English into {language}.
+Your task is to translate the following legal text completely into {language}.
 
-STRICT RULES
+TRANSLATION INSTRUCTIONS:
+1. Translate EVERY single sentence, paragraph, heading, bullet point, explanation, duty, and entitlement into fluent, natural {language}.
+2. Translate all headings (e.g. "Document Type", "Parties Involved", "Key Obligations", "Document Summary", "Risks Detected") into {language}.
+3. DO NOT leave sentences untranslated in English. Every bullet point must be fully written in {language}.
+4. Keep proper names (people, places like Mangaluru), numbers, dates, and currency values intact.
+5. Maintain all markdown formatting (headings, lists, bold text).
 
-1. Translate faithfully.
-2. Do NOT add information.
-3. Do NOT remove information.
-4. Preserve Markdown formatting.
-5. Preserve headings.
-6. Preserve bullet lists.
-7. Preserve numbering.
-8. Preserve clause numbers.
-9. Preserve section numbers.
-10. Preserve dates.
-11. Preserve currency.
-12. Preserve legal citations.
-13. Never translate official Act names such as:
-   - Indian Contract Act, 1872
-   - Transfer of Property Act, 1882
-   - Arbitration and Conciliation Act, 1996
-   - Information Technology Act, 2000
-   - Digital Personal Data Protection Act, 2023
-   - Consumer Protection Act, 2019
+Return ONLY the complete translated text in {language}.
 
-Return ONLY the translated answer.
-
-Answer:
-
+Text to translate:
 {answer}
 """
 
