@@ -59,17 +59,25 @@ async function askQuestion(question, language = null) {
 
 // ─── Text-to-Speech ───────────────────────────────────────────────────────────
 async function speakText(text, language = "en") {
+    if (!text) throw new Error("No text provided for speech.");
+    // Clean markdown formatting characters
+    const cleanText = String(text)
+        .replace(/[*#_`~|\-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
     const res = await fetch(`${BASE_URL}/speak`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, language }),
+        body: JSON.stringify({ text: cleanText, language }),
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `TTS failed: ${res.status}`);
     }
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    const buffer = await res.arrayBuffer();
+    const audioBlob = new Blob([buffer], { type: "audio/wav" });
+    return URL.createObjectURL(audioBlob);
 }
 
 // ─── Translation ──────────────────────────────────────────────────────────────

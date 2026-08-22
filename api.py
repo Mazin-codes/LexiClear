@@ -1,4 +1,5 @@
 import os
+import re
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from rag.loader import load_pdf
@@ -208,6 +209,14 @@ class SpeechRequest(BaseModel):
     language: str
 
 
+def clean_text_for_tts(text: str) -> str:
+    """Clean markdown and special symbols so TTS models generate clean audio."""
+    if not text:
+        return ""
+    cleaned = re.sub(r'[*#_`~|\-]', ' ', text)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
 @app.post("/speak")
 def speak(request: SpeechRequest):
 
@@ -222,7 +231,8 @@ def speak(request: SpeechRequest):
         ) from error
 
     # Validate text
-    if not request.text.strip():
+    raw_text = clean_text_for_tts(request.text)
+    if not raw_text:
         raise HTTPException(
             status_code=422,
             detail="Text cannot be empty."
@@ -231,7 +241,7 @@ def speak(request: SpeechRequest):
     try:
 
         output_path = generate_speech(
-            text=request.text,
+            text=raw_text,
             language=language,
             output_path="answer.wav",
         )

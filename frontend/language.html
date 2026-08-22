@@ -364,14 +364,32 @@
     async function handleListenTranslated() {
         const textToRead = translatedText || currentSourceText;
         const langCode   = selectedLanguage === 'Hindi' ? 'hi' : selectedLanguage === 'Kannada' ? 'kn' : 'en';
-        if (currentAudio) { currentAudio.pause(); currentAudio = null; return; }
-        showToast(`Generating & playing speech in ${selectedLanguage}...`, 'info');
+
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+            showToast('Audio stopped.', 'info');
+            return;
+        }
+
+        showToast(`Generating speech audio in ${selectedLanguage}...`, 'info');
         try {
             const url = await speakText(textToRead, langCode);
             currentAudio = new Audio(url);
-            currentAudio.play();
+            
+            const promise = currentAudio.play();
+            if (promise !== undefined) {
+                promise.then(() => {
+                    showToast(`🔊 Playing speech in ${selectedLanguage}...`, 'success');
+                }).catch(err => {
+                    console.error("Audio playback error:", err);
+                    showToast('Click anywhere on the webpage to start audio playback.', 'error');
+                });
+            }
             currentAudio.addEventListener('ended', () => { currentAudio = null; });
-        } catch (err) { showToast('TTS audio failed: ' + err.message, 'error'); }
+        } catch (err) {
+            showToast('TTS audio failed: ' + err.message, 'error');
+        }
     }
 </script>
 </body>
