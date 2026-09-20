@@ -10,6 +10,7 @@ pypdf
 python-dotenv
 groq
 fastapi
+python-multipart
 
 # OCR dependencies
 pillow>=10.0.0

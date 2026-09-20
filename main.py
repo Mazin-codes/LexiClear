@@ -1,7 +1,7 @@
 from rag.loader import load_pdf
 from rag.chunker import split_documents
 from rag.embeddings import get_embedding_model
-from rag.vectordb import create_vector_db
+from rag.vectordb import create_vector_db, PERSIST_DIRECTORY
 from rag.retriever import get_retriever
 from rag.llm import generate_answer
 from rag.explainability import explain_retrieval
@@ -32,7 +32,7 @@ print("\nCreating Embeddings...")
 embeddings = get_embedding_model()
 
 print("\nCreating Vector Database...")
-db = create_vector_db(chunks, embeddings)
+db = create_vector_db(chunks, embeddings, PERSIST_DIRECTORY)
 
 retriever = get_retriever(db)
 

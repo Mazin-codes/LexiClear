@@ -15,6 +15,9 @@ def analyze_risks(docs):
         [doc.page_content for doc in docs]
     )
 
+    # Limit context size to prevent exceeding API limits
+    context = context[:15000]
+
     prompt = f"""
 You are an expert Legal Risk Assessment AI.
 

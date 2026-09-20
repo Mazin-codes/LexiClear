@@ -1,43 +1,36 @@
 import os
 from fastapi import FastAPI, HTTPException, UploadFile
-from rag.loader import load_pdf
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
 from rag.ocr_loader import load_any_document, IMAGE_EXTENSIONS
 from rag.summary_generator import generate_document_summary
-from rag.retriever import get_retriever
 from rag.complexity import analyze_document_complexity
 from rag.llm import generate_answer
 from rag.clause_classifier import classify_clauses
 from rag.risk_analyzer import analyze_risks
 from rag.vectordb import create_document_vector_db
-from rag.vector_store import load_vector_db
-from rag.embeddings import get_embedding_model
 from rag.document_classifier import classify_document
 from rag.session import set_document_type
 from pydantic import BaseModel
 from rag.context_fusion import build_context
 from rag.language import (
     resolve_language,
-    translate_document,
     translate_question_for_retrieval,
     translate_answer,
 )
 from rag.obligation_extractor import extract_obligations
 from rag.rights_extractor import extract_rights
-from fastapi.responses import FileResponse
-import uuid
 from rag.tts import generate_speech
 
 app = FastAPI(
     title="LexiClear+ API"
 )
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 ALLOWED_EXTENSIONS = {".pdf"}.union(IMAGE_EXTENSIONS)
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def home():
-    return {
-        "message": "LexiClear+ API Running"
-    }
+    return FileResponse("static/index.html")
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile):
@@ -149,9 +142,7 @@ def ask_question(request: QuestionRequest):
     }
 
 
-class TranslationRequest(BaseModel):
 
-    language: str
 
 class SpeechRequest(BaseModel):
     text: str
