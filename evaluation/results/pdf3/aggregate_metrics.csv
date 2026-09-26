@@ -1,0 +1,2 @@
+context_relevance,context_precision,context_recall,faithfulness,answer_relevance,semantic_similarity,bertscore_precision,bertscore_recall,bertscore_f1,qa_accuracy,questions_evaluated,total_questions,mode,llm_judge
+0.3975,0.9681,0.5,0.5,0.7028,0.8021,0.8764,0.9422,0.9077,0.8,80,80,fully_live,True

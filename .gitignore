@@ -6,6 +6,7 @@ __pycache__/
 
 # Virtual Environments
 venv/
+venv312/
 .env/
 
 # Environment Variables
@@ -15,6 +16,7 @@ venv/
 chroma_db/
 chroma_docs/
 chroma_legal/
+
 
 # Mac Files
 .DS_Store
