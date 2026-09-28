@@ -97,51 +97,151 @@ def plot_rag_triad_heatmap(
 ) -> Optional[Path]:
     """
     Heatmap: rows = questions, columns = [Context Relevance, Faithfulness,
-    Answer Relevance].  Cell values are the actual computed scores.
+    Answer Relevance]. Cell values are the actual computed scores.
+
+    The figure size is optimized for inclusion in an A4 project report:
+    all evaluated questions remain visible while keeping the numerical
+    cell values readable.
     """
     required = ["context_relevance", "faithfulness", "answer_relevance"]
     missing = [c for c in required if not _has_column(df, c)]
+
     if missing:
         print(f"[rag_graphs] Skipping RAG triad heatmap — missing: {missing}")
         return None
 
     matrix = df[required].values.astype(float)
     q_labels = _question_labels(df)
-    col_labels = ["Context Relevance", "Faithfulness", "Answer Relevance"]
+    col_labels = [
+        "Context Relevance",
+        "Faithfulness",
+        "Answer Relevance",
+    ]
 
-    fig_h = max(6, len(df) * 0.35)
-    fig, ax = plt.subplots(figsize=(9, fig_h))
+    # ---------------------------------------------------------------
+    # Compact A4-friendly layout
+    # ---------------------------------------------------------------
+    # The previous implementation used 0.35 inch per question.
+    # For 80 questions this produced a ~28 inch tall image.
+    #
+    # A fixed 8.4 inch height keeps all 80 rows while making the
+    # resulting image suitable for insertion into an A4 report.
+    # The values remain visible because the annotation and tick
+    # sizes are adjusted locally for this dense graph.
+    # ---------------------------------------------------------------
+    fig, ax = plt.subplots(figsize=(6.6, 8.4))
 
-    im = ax.imshow(matrix, cmap=_RAG_CMAP, vmin=0.0, vmax=1.0, aspect="auto")
+    im = ax.imshow(
+        matrix,
+        cmap=_RAG_CMAP,
+        vmin=0.0,
+        vmax=1.0,
+        aspect="auto",
+        interpolation="nearest",
+    )
 
-    # Annotate each cell
+    # ---------------------------------------------------------------
+    # Annotate every cell with the actual metric value
+    # ---------------------------------------------------------------
+    heatmap_value_size = 5.2
+
     for row in range(len(df)):
         for col in range(3):
             val = matrix[row, col]
+
+            # White text on darker cells and black text on lighter
+            # cells to preserve readability across the colour scale.
             color = "black" if 0.35 < val < 0.85 else "white"
+
             ax.text(
-                col, row, f"{val:.2f}",
-                ha="center", va="center",
-                fontsize=VALUE_SIZE, color=color,
+                col,
+                row,
+                f"{val:.2f}",
+                ha="center",
+                va="center",
+                fontsize=heatmap_value_size,
+                color=color,
             )
 
+    # ---------------------------------------------------------------
+    # X-axis: three RAG metrics
+    # ---------------------------------------------------------------
     ax.set_xticks(range(3))
-    ax.set_xticklabels(col_labels, fontsize=TICK_SIZE + 1)
+    ax.set_xticklabels(
+        col_labels,
+        fontsize=7,
+    )
+
+    # ---------------------------------------------------------------
+    # Y-axis: all evaluated questions
+    # ---------------------------------------------------------------
     ax.set_yticks(range(len(df)))
-    ax.set_yticklabels(q_labels, fontsize=TICK_SIZE)
-    ax.set_title("RAG Triad Evaluation Across Questions", fontsize=TITLE_SIZE, pad=14)
+    ax.set_yticklabels(
+        q_labels,
+        fontsize=6,
+    )
 
-    cbar = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.03)
-    cbar.set_label("Score (0–1)", fontsize=TICK_SIZE)
-    cbar.ax.tick_params(labelsize=TICK_SIZE)
+    ax.tick_params(
+        axis="x",
+        pad=3,
+        length=3,
+    )
 
-    fig.tight_layout()
-    _save(fig, output_dir, "rag_triad_heatmap.png")
+    ax.tick_params(
+        axis="y",
+        pad=2,
+        length=3,
+    )
+
+    # ---------------------------------------------------------------
+    # Title
+    # ---------------------------------------------------------------
+    ax.set_title(
+        "RAG Triad Evaluation Across Questions",
+        fontsize=10,
+        pad=8,
+    )
+
+    # ---------------------------------------------------------------
+    # Colour scale
+    # ---------------------------------------------------------------
+    cbar = fig.colorbar(
+        im,
+        ax=ax,
+        fraction=0.025,
+        pad=0.02,
+    )
+
+    cbar.set_label(
+        "Score (0–1)",
+        fontsize=6.5,
+    )
+
+    cbar.ax.tick_params(
+        labelsize=6,
+    )
+
+    # ---------------------------------------------------------------
+    # Layout
+    # ---------------------------------------------------------------
+    fig.subplots_adjust(
+        left=0.12,
+        right=0.91,
+        top=0.95,
+        bottom=0.08,
+    )
+
+    _save(
+        fig,
+        output_dir,
+        "rag_triad_heatmap.png",
+    )
+
     return output_dir / "rag_triad_heatmap.png"
 
 
 # ===========================================================================
-# GRAPH 2 — Retrieval vs Generation Scatter
+# GRAPH 2 — Retrieval vs Answer Relevance Scatter
 # ===========================================================================
 
 def plot_retrieval_generation_quadrant(
@@ -149,29 +249,94 @@ def plot_retrieval_generation_quadrant(
     output_dir: Path,
 ) -> Optional[Path]:
     """
-    Scatter: X = Context Relevance (retrieval quality),
-             Y = Faithfulness (generation groundedness).
-    Each point is one question, labelled Q1…QN.
+    Scatter plot showing the relationship between:
+
+        X-axis = Context Relevance
+        Y-axis = Answer Relevance
+
+    Each point represents one evaluated question.
+
+    Both metrics are normalized to the same 0–1 scale used by the
+    RAG Triad heatmap. No values are modified or artificially generated.
     """
-    if not _has_column(df, "context_relevance") or \
-       not _has_column(df, "faithfulness"):
-        print("[rag_graphs] Skipping quadrant scatter — missing columns.")
+
+    required = ["context_relevance", "answer_relevance"]
+
+    missing = [c for c in required if not _has_column(df, c)]
+
+    if missing:
+        print(
+            "[rag_graphs] Skipping retrieval-vs-answer scatter "
+            f"— missing columns: {missing}"
+        )
         return None
 
-    x = df["context_relevance"].values.astype(float)
-    y = df["faithfulness"].values.astype(float)
+    # -----------------------------------------------------------------------
+    # Read the actual per-question metric values
+    # -----------------------------------------------------------------------
+
+    x = df["context_relevance"].astype(float).to_numpy()
+    y = df["answer_relevance"].astype(float).to_numpy()
+
     q_labels = _question_labels(df)
+
+    # -----------------------------------------------------------------------
+    # Remove rows where either metric is unavailable.
+    # This does NOT alter valid metric values.
+    # -----------------------------------------------------------------------
+
+    valid = np.isfinite(x) & np.isfinite(y)
+
+    x = x[valid]
+    y = y[valid]
+
+    labels = [
+        label
+        for label, is_valid in zip(q_labels, valid)
+        if is_valid
+    ]
+
+    if len(x) == 0:
+        print(
+            "[rag_graphs] Skipping retrieval-vs-answer scatter "
+            "— no valid metric values."
+        )
+        return None
+
+    # -----------------------------------------------------------------------
+    # Combined score is ONLY used for point colouring.
+    # It does not change either metric plotted on the axes.
+    # -----------------------------------------------------------------------
+
+    combined_score = (x + y) / 2.0
+
+    # -----------------------------------------------------------------------
+    # Figure
+    #
+    # Fixed 0–1 axes make this directly comparable with the RAG heatmap.
+    # -----------------------------------------------------------------------
 
     fig, ax = plt.subplots(figsize=(9, 7))
 
     scatter = ax.scatter(
-        x, y,
-        c=x + y,
+        x,
+        y,
+        c=combined_score,
         cmap=_RAG_CMAP,
-        s=80, zorder=3, edgecolors="grey", linewidths=0.5,
+        vmin=0.0,
+        vmax=1.0,
+        s=75,
+        alpha=0.85,
+        zorder=3,
+        edgecolors="grey",
+        linewidths=0.5,
     )
 
-    for i, label in enumerate(q_labels):
+    # -----------------------------------------------------------------------
+    # Question labels
+    # -----------------------------------------------------------------------
+
+    for i, label in enumerate(labels):
         ax.annotate(
             label,
             (x[i], y[i]),
@@ -181,21 +346,151 @@ def plot_retrieval_generation_quadrant(
             color="#333333",
         )
 
-    ax.set_xlabel("Context Relevance (Retrieval Quality)", fontsize=LABEL_SIZE)
-    ax.set_ylabel("Faithfulness (Generation Groundedness)", fontsize=LABEL_SIZE)
-    ax.set_title("Retrieval vs. Generation Groundedness", fontsize=TITLE_SIZE, pad=12)
-    ax.set_xlim(-0.05, 1.05)
-    ax.set_ylim(-0.05, 1.05)
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
-    ax.grid(True, alpha=0.3, linestyle="--")
+    # -----------------------------------------------------------------------
+    # Axes
+    #
+    # IMPORTANT:
+    # Both are explicitly 0–1, exactly like the heatmap.
+    # -----------------------------------------------------------------------
 
-    cb = fig.colorbar(scatter, ax=ax, fraction=0.025, pad=0.02)
-    cb.set_label("CR + Faithfulness (combined)", fontsize=8)
-    cb.ax.tick_params(labelsize=8)
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+
+    ax.set_xlabel(
+        "Context Relevance (Retrieval Quality)",
+        fontsize=LABEL_SIZE,
+    )
+
+    ax.set_ylabel(
+        "Answer Relevance (Answer Quality)",
+        fontsize=LABEL_SIZE,
+    )
+
+    ax.set_title(
+        "Retrieval Quality vs. Answer Relevance",
+        fontsize=TITLE_SIZE,
+        pad=12,
+    )
+
+    # -----------------------------------------------------------------------
+    # Tick scale: 0.0 → 1.0 in increments of 0.1
+    # -----------------------------------------------------------------------
+
+    ax.xaxis.set_major_locator(
+        ticker.MultipleLocator(0.1)
+    )
+
+    ax.yaxis.set_major_locator(
+        ticker.MultipleLocator(0.1)
+    )
+
+    ax.xaxis.set_major_formatter(
+        ticker.FormatStrFormatter("%.1f")
+    )
+
+    ax.yaxis.set_major_formatter(
+        ticker.FormatStrFormatter("%.1f")
+    )
+
+    # -----------------------------------------------------------------------
+    # Grid
+    # -----------------------------------------------------------------------
+
+    ax.grid(
+        True,
+        alpha=0.3,
+        linestyle="--",
+        zorder=0,
+    )
+
+    # -----------------------------------------------------------------------
+    # Reference lines at the dataset means
+    #
+    # These are descriptive only and help identify questions above/below
+    # the average retrieval and answer-relevance scores.
+    # -----------------------------------------------------------------------
+
+    mean_x = float(np.mean(x))
+    mean_y = float(np.mean(y))
+
+    ax.axvline(
+        mean_x,
+        color="#555555",
+        linestyle=":",
+        linewidth=1.1,
+        zorder=2,
+    )
+
+    ax.axhline(
+        mean_y,
+        color="#555555",
+        linestyle=":",
+        linewidth=1.1,
+        zorder=2,
+    )
+
+    # -----------------------------------------------------------------------
+    # Mean labels
+    # -----------------------------------------------------------------------
+
+    ax.text(
+        mean_x + 0.01,
+        0.02,
+        f"mean CR = {mean_x:.3f}",
+        fontsize=7.5,
+        color="#555555",
+        rotation=90,
+        va="bottom",
+    )
+
+    ax.text(
+        0.02,
+        mean_y + 0.01,
+        f"mean AR = {mean_y:.3f}",
+        fontsize=7.5,
+        color="#555555",
+        ha="left",
+        va="bottom",
+    )
+
+    # -----------------------------------------------------------------------
+    # Colour bar
+    #
+    # Same 0–1 scale as the heatmap.
+    # -----------------------------------------------------------------------
+
+    cb = fig.colorbar(
+        scatter,
+        ax=ax,
+        fraction=0.025,
+        pad=0.02,
+    )
+
+    cb.set_label(
+        "Combined Score (CR + AR) / 2",
+        fontsize=8,
+    )
+
+    cb.ax.tick_params(
+        labelsize=8,
+    )
+
+    cb.set_ticks(
+        np.arange(0.0, 1.01, 0.1)
+    )
+
+    # -----------------------------------------------------------------------
+    # Layout and save
+    # -----------------------------------------------------------------------
 
     fig.tight_layout()
-    _save(fig, output_dir, "retrieval_generation_quadrant.png")
+
+    _save(
+        fig,
+        output_dir,
+        "retrieval_generation_quadrant.png",
+    )
+
     return output_dir / "retrieval_generation_quadrant.png"
 
 
@@ -387,42 +682,175 @@ def _plot_per_question_metric(
     output_dir: Path,
     color: str = "#4e79a7",
 ) -> Path:
+    """
+    Generate a compact, report-friendly per-question metric graph.
+
+    The graph is deliberately kept at a fixed size so that datasets with
+    many questions (e.g. 80 questions) do not produce extremely wide images.
+
+    Metric values are NOT changed or rescaled. Only the visual presentation
+    is modified.
+    """
+
     q_labels = _question_labels(df)
     values = df[column].values.astype(float)
 
-    fig_w = max(10, len(df) * 0.55)
-    fig, ax = plt.subplots(figsize=(fig_w, 5))
+    # -----------------------------------------------------------------------
+    # FIXED FIGURE SIZE
+    #
+    # Previously:
+    #     fig_w = max(10, len(df) * 0.55)
+    #
+    # For 80 questions this produced a ~44-inch-wide figure.
+    #
+    # Fixed dimensions make the graph suitable for direct insertion into
+    # the report while keeping all 80 questions visible.
+    # -----------------------------------------------------------------------
 
-    bars = ax.bar(q_labels, values, color=color, width=0.65, zorder=3)
+    fig, ax = plt.subplots(
+        figsize=(10, 4.8),
+        dpi=200,
+    )
+
+    x_positions = np.arange(len(df))
+
+    bars = ax.bar(
+        x_positions,
+        values,
+        color=color,
+        width=0.72,
+        zorder=3,
+    )
+
+    # -----------------------------------------------------------------------
+    # VALUE LABELS
+    #
+    # Values are retained for every question.
+    # Smaller font is used so that 80 values remain visible.
+    # -----------------------------------------------------------------------
 
     for bar, val in zip(bars, values):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            val + 0.015,
+            min(val + 0.025, 1.105),
             f"{val:.2f}",
-            ha="center", va="bottom",
-            fontsize=6.5, rotation=0,
+            ha="center",
+            va="bottom",
+            fontsize=4.5,
+            rotation=90,
+            clip_on=False,
         )
 
+    # -----------------------------------------------------------------------
+    # DATASET MEAN
+    # -----------------------------------------------------------------------
+
     mean_val = float(np.mean(values))
-    ax.axhline(mean_val, color="#555555", linestyle="--", linewidth=1.2, zorder=4)
-    ax.text(
-        len(df) - 0.5, mean_val + 0.02,
-        f"mean={mean_val:.3f}",
-        ha="right", va="bottom",
-        fontsize=8, color="#555555",
+
+    ax.axhline(
+        mean_val,
+        color="#555555",
+        linestyle="--",
+        linewidth=1.0,
+        zorder=4,
     )
 
-    ax.set_ylim(0, 1.15)
-    ax.set_xlabel("Question", fontsize=LABEL_SIZE)
-    ax.set_ylabel("Score (0–1)", fontsize=LABEL_SIZE)
-    ax.set_title(title, fontsize=TITLE_SIZE, pad=12)
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
-    ax.grid(axis="y", alpha=0.3, linestyle="--", zorder=0)
+    ax.text(
+        len(df) - 1,
+        min(mean_val + 0.025, 1.11),
+        f"mean = {mean_val:.3f}",
+        ha="right",
+        va="bottom",
+        fontsize=6.5,
+        color="#555555",
+        backgroundcolor="white",
+    )
 
-    plt.xticks(rotation=45, ha="right", fontsize=8)
-    fig.tight_layout()
-    _save(fig, output_dir, filename)
+    # -----------------------------------------------------------------------
+    # AXES
+    # -----------------------------------------------------------------------
+
+    ax.set_ylim(0, 1.15)
+
+    ax.set_xlim(-0.8, len(df) - 0.2)
+
+    ax.set_xlabel(
+        "Question",
+        fontsize=LABEL_SIZE,
+    )
+
+    ax.set_ylabel(
+        "Score (0–1)",
+        fontsize=LABEL_SIZE,
+    )
+
+    ax.set_title(
+        title,
+        fontsize=TITLE_SIZE,
+        pad=8,
+    )
+
+    # -----------------------------------------------------------------------
+    # Y-AXIS SCALE
+    #
+    # Same 0–1 interpretation as the RAG heatmap.
+    # -----------------------------------------------------------------------
+
+    ax.yaxis.set_major_locator(
+        ticker.MultipleLocator(0.1)
+    )
+
+    ax.yaxis.set_major_formatter(
+        ticker.FormatStrFormatter("%.1f")
+    )
+
+    # -----------------------------------------------------------------------
+    # X-AXIS
+    #
+    # Keep all 80 question positions, but use compact labels.
+    # -----------------------------------------------------------------------
+
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(
+        q_labels,
+        rotation=90,
+        fontsize=5,
+        ha="center",
+    )
+
+    # -----------------------------------------------------------------------
+    # GRID
+    # -----------------------------------------------------------------------
+
+    ax.grid(
+        axis="y",
+        alpha=0.25,
+        linestyle="--",
+        linewidth=0.6,
+        zorder=0,
+    )
+
+    # Keep the graph visually clean.
+    ax.set_axisbelow(True)
+
+    # -----------------------------------------------------------------------
+    # COMPACT LAYOUT
+    # -----------------------------------------------------------------------
+
+    fig.tight_layout(
+        pad=0.8,
+    )
+
+    # -----------------------------------------------------------------------
+    # SAVE
+    # -----------------------------------------------------------------------
+
+    _save(
+        fig,
+        output_dir,
+        filename,
+    )
+
     return output_dir / filename
 
 
