@@ -10,7 +10,7 @@ from rag_graphs import generate_all_graphs
 
 BASE_DIR = Path(__file__).resolve().parent
 
-RESULTS_DIR = BASE_DIR / "results"
+RESULTS_DIR = BASE_DIR / "results/pdf1"
 GRAPHS_DIR = BASE_DIR / "graphs"
 
 RESULTS_CSV = RESULTS_DIR / "rag_evaluation_results.csv"
